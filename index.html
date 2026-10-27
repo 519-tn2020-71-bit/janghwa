@@ -2188,7 +2188,7 @@ OBJDRAW.mat=(o,sx,sy)=>{R(sx-2,sy+3,o.w*16+4,12,"#1d1813");R(sx-1,sy+4,o.w*16+2,
 .notes .nt .rs.hold{background:#f4ead0;color:#8a6a1f}.notes .nt .rs.fix{background:#fbe3dc;color:#8c3b2a}
 .wbox textarea{width:100%;min-height:110px;font:inherit;font-size:15px;line-height:1.6;padding:8px;border:2px solid var(--ink2);background:#fff;box-sizing:border-box}
 .ask .qa{border:1px solid var(--line);background:#fff;padding:8px 10px;margin:6px 0;font-size:14.5px;line-height:1.65}
-.ask .qa .q{font-weight:700}.ask .pick small,.ask .pk small{color:var(--muted)}.ask .pick .bopts button{font-size:13.5px;padding:6px 10px}.ask .pk{margin-top:6px;padding-top:6px;border-top:1px dashed var(--line);font-size:13.5px}.ask .crisis{border:2px solid #b3412f;background:#fff1ee;padding:10px 12px;margin:8px 0;line-height:1.7}.ask .sid{border:2px solid var(--ink2);background:#fffdf5;padding:10px 12px;margin:8px 0}.ask .sid input{font:inherit;width:6.5em;padding:4px 6px;margin:0 4px}.ask .qa .ai{color:#3a4f7a}.ask .qa .ai i{font-style:normal;font-family:var(--ui);font-size:11px;background:#e3e8f3;padding:1px 6px;border-radius:8px;margin-right:6px}
+.ask .qa .q{font-weight:700}.ask .pick small,.ask .pk small{color:var(--muted)}.ask .pick .bopts button{font-size:13.5px;padding:6px 10px}.ask .pk{margin-top:6px;padding-top:6px;border-top:1px dashed var(--line);font-size:13.5px}.ask .crisis{border:2px solid #b3412f;background:#fff1ee;padding:10px 12px;margin:8px 0;line-height:1.7}.ask .sid{border:2px solid var(--ink2);background:#fffdf5;padding:10px 12px;margin:8px 0}.submit .okmsg{border:2px solid #3f7a3a;background:#eef6ea;padding:8px 10px;margin:8px 0}.submit .sid input{font:inherit;width:7em;padding:4px 6px;margin:0 4px 4px 0}.ask .sid input{font:inherit;width:6.5em;padding:4px 6px;margin:0 4px}.ask .qa .ai{color:#3a4f7a}.ask .qa .ai i{font-style:normal;font-family:var(--ui);font-size:11px;background:#e3e8f3;padding:1px 6px;border-radius:8px;margin-right:6px}
 .cmp{width:100%;border-collapse:collapse;font-size:14px;line-height:1.6}.cmp th,.cmp td{border:1px solid var(--line);padding:6px 8px;vertical-align:top;text-align:left}.cmp th{background:var(--paper2);font-family:var(--display);font-weight:400}
 `;document.head.appendChild(st)})();
 
@@ -2371,17 +2371,56 @@ function notesText(){const E=G.ex,L=[];L.push("[듣기 기록지] 철산의 귀 
     if(n.press)L.push(`  어긋남: ${n.press}`);else{if(n.line)L.push(`  겉말: ${n.sum}`);if(n.intent)L.push(`  의도: ${n.intent}${n.intent0&&n.intent0!==n.intent?` (처음 판정: ${n.intent0})`:""}`);if(n.clue)L.push(`  근거 단서: ${n.clue}`);if(n.trust)L.push(`  판단: ${n.trust}`)}
     if(n.fix)L.push(`  판정을 고침: ${n.fix.from} → ${n.fix.to} (까닭: ${n.fix.why})`);L.push(`  결과: ${n.res}`)}
   for(const [id,w] of Object.entries(E.writes))L.push(`· 쓰기(제${w.ch}장) ${w.t}: ${w.a}`);
-  for(const [id,a] of Object.entries(E.asks)){L.push(`· AI 심문(${a.t})`);for(const x of a.qs){L.push(`  ${NAMES[x.who]}에게 “${x.q}”`+(x.a?` → AI 대답: ${x.a}`:""));if(x.pick!=null&&x.intent>=0)L.push(`    내 판정: ${AI_INTENTS[x.pick]} / AI가 밝힌 속셈: ${AI_INTENTS[x.intent]}`)}if(a.best)L.push(`  가장 쓸모 있었을 질문: “${a.best.q}” (${a.best.why})`)}
+  for(const [id,a] of Object.entries(E.asks)){if(!a.qs.length)continue;L.push(`· AI 심문(${a.t})`);for(const x of a.qs){L.push(`  ${NAMES[x.who]}에게 “${x.q}”`+(x.a?` → AI 대답: ${x.a}`:""));if(x.pick!=null&&x.intent>=0)L.push(`    내 판정: ${AI_INTENTS[x.pick]} / AI가 밝힌 속셈: ${AI_INTENTS[x.intent]}`)}if(a.best)L.push(`  가장 쓸모 있었을 질문: “${a.best.q}” (${a.best.why})`)}
   return L.join("\n")}
 $("#bEvid").onclick=()=>{const E=G.ex;
   openPanel(`<span class="eb">듣기 기록지</span><h2>내가 들은 것, 짐작한 것, 고친 것</h2><p class="note">심문 판에서 짚은 속뜻, 판단 보류와 그 확인, 쓴 글이 여기에 모여요. 제출할 때는 ‘글로 복사하기’를 눌러 설문지에 붙여 넣으세요.</p>
-  <div class="row"><button class="btn pri" id="cpNotes">글로 복사하기</button></div>
+  <div class="row"><button class="btn pri" id="cpNotes">글로 복사하기</button><button class="btn" id="sbNotes">설문지로 제출하기</button></div>
   <div class="notes">${E.notes.map(n=>`<div class="nt"><small>제${n.ch}장 · ${esc(n.who)}${n.p?` · 본문 ${n.p}줄`:""}</small><span class="rs${n.res==="보류"?" hold":n.res==="고침"?" fix":""}">${esc(n.res)}</span><br>“${esc(short(n.line||n.sum||""))}”<br>
     ${n.press?`어긋남: ${esc(n.press)}`:`${n.line?`겉말: ${esc(n.sum)}<br>`:""}${n.intent?`의도: <b>${esc(n.intent)}</b>${n.intent0&&n.intent0!==n.intent?` <small>(처음 판정: ${esc(n.intent0)})</small>`:""}<br>`:""}${n.clue?`근거 단서: ${esc(n.clue)}<br>`:""}${n.trust?`판단: ${esc(n.trust)}`:""}`}
     ${n.fix?`<br>고친 판정: ${esc(n.fix.from)} → <b>${esc(n.fix.to)}</b> (까닭: ${esc(n.fix.why)})`:""}</div>`).join("")||'<p class="note">아직 짚은 것이 없어요.</p>'}
   ${Object.values(E.writes).map(w=>`<div class="nt"><small>쓰기 · 제${w.ch}장</small><br><b>${esc(w.t)}</b><br>${esc(w.a)}</div>`).join("")}
   ${Object.values(E.asks).map(a=>`<div class="nt"><small>AI 심문 · ${esc(a.t)}</small><br>${a.qs.map(x=>esc(NAMES[x.who]+": "+x.q)+(x.a?`<br><small>AI 대답: ${esc(x.a)}</small>`:"")+(x.pick!=null&&x.intent>=0?`<br><small>내 판정: ${esc(AI_INTENTS[x.pick])} · AI 속셈: ${esc(AI_INTENTS[x.intent])}</small>`:"")).join("<br>")}${a.best?`<br>가장 쓸모 있었을 질문: “${esc(a.best.q)}” (${esc(a.best.why)})`:""}</div>`).join("")}</div>`);
+  const sb=$("#sbNotes");if(sb)sb.onclick=()=>{closePanel();submitSheet(G.ch>=5?"4차시 최종":"3차시 중간")};
   const b=$("#cpNotes");if(b)b.onclick=async()=>{const t=notesText();try{await navigator.clipboard.writeText(t);toast("복사했어요","설문지 칸에 붙여 넣으세요")}catch(e){const ta=document.createElement("textarea");ta.value=t;document.body.appendChild(ta);ta.select();try{document.execCommand("copy");toast("복사했어요","설문지 칸에 붙여 넣으세요")}catch(x){}ta.remove()}}};
+
+/* ═════════ 설문지 제출 (설계서 6.1): 3차시 중간, 4차시 최종 ═════════
+   SUBMIT.url 은 설문지의 formResponse 주소, f 는 칸마다 entry 번호(_작업원본/장화홍련전/설문지/설문지_만들기.gs 가 알려 줌).
+   비어 있으면 [제출하기] 대신 [글로 복사하기]만 보인다. */
+const SUBMIT={url:"",f:{cls:"",num:"",name:"",session:"",notes:"",fixes:"",writes:"",progress:"",report:"",memo:""}};
+function submitData(session){const E=G.ex,sid=E.sid||{},N=E.notes;
+  const fixes=N.filter(n=>n.fix||(n.intent0&&n.intent&&n.intent0!==n.intent)).map(n=>`· 제${n.ch}장 ${n.who}${n.p?` (본문 ${n.p}줄)`:""}: “${short(n.line||n.sum||"")}”\n  처음 판정: ${n.fix?n.fix.from:n.intent0} → 고친 판정: ${n.fix?n.fix.to:n.intent}${n.fix&&n.fix.why?`\n  까닭: ${n.fix.why}`:""}`).join("\n");
+  const writes=Object.values(E.writes).map(w=>`· [제${w.ch}장] ${w.t}\n${w.a}`).join("\n\n");
+  const cnt=r=>N.filter(n=>n.res===r).length,qs=Object.values(E.asks).reduce((s,a)=>s+a.qs.length,0);
+  const progress=`마친 장: ${E.done||0} / 6${E.lite?" (읽기 중심 모드)":""}\n듣기 판정 ${N.length}개 · 처음에 맞힘 ${cnt("맞음")} · 고침 ${cnt("고침")} · 보류 뒤 확인 ${cnt("확인")} · 아직 보류 ${cnt("보류")} · 어긋남 짚기 ${cnt("어긋남")}\n되짚은 횟수 ${E.wrong||0} · AI 심문 질문 ${qs}개`;
+  return {cls:sid.cls||"",num:sid.num||"",name:E.sname||"",session,notes:notesText(),fixes:fixes||"(없음)",writes:writes||"(없음)",progress,report:E.report||"",memo:E.memo||""}}
+function submitText(d){return [`반 ${d.cls} · 번호 ${d.num} · 이름 ${d.name} · ${d.session}`,"",d.notes,"","[고친 판정]",d.fixes,"","[쓴 글]",d.writes,"","[진행 기록]",d.progress,d.report?"\n[감영에 올리는 보고서]\n"+d.report:"",d.memo?"\n[선생님께 한마디]\n"+d.memo:""].join("\n")}
+async function copyText(t){try{await navigator.clipboard.writeText(t);return true}catch(e){const ta=document.createElement("textarea");ta.value=t;document.body.appendChild(ta);ta.select();let ok=false;try{ok=document.execCommand("copy")}catch(x){}ta.remove();return ok}}
+function sendForm(d){const S=SUBMIT;if(!S.url)return Promise.resolve("none");const p=new URLSearchParams();for(const k of Object.keys(S.f))if(S.f[k])p.append(S.f[k],d[k]==null?"":String(d[k]));
+  /* 설문지는 다른 곳에서 온 요청에 결과를 보여 주지 않으므로, 보냈다는 것만 알 수 있다 */
+  return fetch(S.url,{method:"POST",mode:"no-cors",headers:{"Content-Type":"application/x-www-form-urlencoded"},body:p.toString()}).then(()=>"sent")}
+function submitSheet(session){return new Promise(res=>{const E=G.ex;E.sent=E.sent||{};UI.modal=true;setBodyTalking(true);sfx("page");
+  const v=document.createElement("div");v.className="veil";$("#ui").appendChild(v);let msg="",busy=false;
+  const sid=()=>E.sid||{};
+  const paint=()=>{const s=E.sent[session];
+    v.innerHTML=`<div class="sheet board submit"><span class="eb">${esc(session)} 제출</span><h2>듣기 기록지를 내 보자</h2>
+    <p class="note">${SUBMIT.url?"반·번호·이름을 적고 [제출하기]를 누르면 듣기 기록지, 고친 판정, 쓴 글, 진행 기록이 선생님의 설문지로 한꺼번에 가요.":"[글로 복사하기]를 누른 뒤, 선생님이 알려 준 설문지의 ‘듣기 기록지’ 칸에 붙여 넣으세요."}</p>
+    <div class="sid"><input data-f="cls" maxlength="6" placeholder="반 예: 1-3" value="${esc(sid().cls||"")}"> <input data-f="num" maxlength="3" inputmode="numeric" placeholder="번호" value="${esc(sid().num||"")}"> <input data-f="sname" maxlength="10" placeholder="이름" value="${esc(E.sname||"")}"></div>
+    <table class="cmp"><tr><td>듣기 판정</td><td>${E.notes.length}개</td></tr><tr><td>쓴 글</td><td>${Object.keys(E.writes).length}편</td></tr><tr><td>AI 심문 질문</td><td>${Object.values(E.asks).reduce((t,a)=>t+a.qs.length,0)}개</td></tr></table>
+    <h3>감영에 올리는 보고서 (선택)</h3><div class="wbox"><textarea data-f="report" maxlength="1500" placeholder="부사가 되어 감영에 올릴 보고서를 써 보세요. 누구의 말을 왜 믿었는지 근거를 들어 써요.">${esc(E.report||"")}</textarea></div>
+    <h3>선생님께 한마디 (선택)</h3><div class="wbox"><textarea data-f="memo" maxlength="300" style="min-height:60px">${esc(E.memo||"")}</textarea></div>
+    ${s?`<div class="okmsg">${esc(s)}에 보냈어요. 고쳐서 다시 보내도 돼요(선생님은 마지막 것을 봐요).</div>`:""}${msg?`<div class="bmsg">${msg}</div>`:""}
+    <div class="row">${SUBMIT.url?`<button class="btn pri" data-send${busy?" disabled":""}>${busy?"보내는 중…":s?"다시 제출하기":"제출하기"}</button>`:""}<button class="btn${SUBMIT.url?"":" pri"}" data-copy>글로 복사하기</button><button class="btn" data-next>닫기</button></div></div>`};
+  paint();
+  v.addEventListener("input",e=>{const f=e.target.dataset&&e.target.dataset.f;if(!f)return;const val=e.target.value;
+    if(f==="cls"||f==="num"){E.sid=Object.assign({},E.sid||{},{[f]:f==="num"?val.replace(/\D/g,""):val.trim()})}else E[f]=val;writeSave()});
+  v.addEventListener("click",async e=>{
+    if(e.target.closest("[data-next]")){v.remove();UI.modal=!!document.querySelector("#title,.veil,.dlg");UI.onKey=null;setBodyTalking(false);writeSave();res();return}
+    const d=submitData(session);
+    if(e.target.closest("[data-copy]")){const ok=await copyText(submitText(d));msg=ok?"복사했어요. 설문지 칸에 붙여 넣으세요.":"복사가 막혔어요. 아래 글을 모두 골라(Ctrl+A) 복사(Ctrl+C)한 뒤 설문지에 붙여 넣으세요.";paint();if(!ok){const ta=document.createElement("textarea");ta.readOnly=true;ta.value=submitText(d);ta.style.cssText="width:100%;min-height:160px;margin-top:6px";v.querySelector(".bmsg").after(ta);ta.focus();ta.select()}return}
+    if(e.target.closest("[data-send]")&&!busy){if(!d.cls||!d.num||!d.name.trim()){msg="반, 번호, 이름을 모두 적어 주세요.";paint();return}
+      busy=true;msg="";paint();try{await sendForm(d);E.sent[session]=new Date().toLocaleTimeString("ko-KR",{hour:"2-digit",minute:"2-digit"});sfx("stamp");addXp(10)}catch(x){msg="보내지 못했어요. [글로 복사하기]로 설문지에 직접 붙여 넣으세요."}busy=false;writeSave();paint()}});
+  UI.onKey=e=>e.target&&(e.target.tagName==="TEXTAREA"||e.target.tagName==="INPUT")?false:true})}
 
 /* ══════════════ 제1~4장 부사의 귀 (본문 136~201) ══════════════
    @p숫자 는 다빈치맵 문단(설계서의 본문 줄 번호), @p숫자.k 는 그 문단의 k째 문장. build.js 가 자료(mod.txt)의 글로 바꿔 넣는다. 손으로 옮겨 적지 않는다.
@@ -2606,7 +2645,7 @@ CHS.j[4]={mood:"tense",
     await S([...qq("twin",0,"소녀들은 밝으신 사또를 만나 뼈에 사무친 한을 풀고 또 해골까지 거두어 주시옵고, 아비의 죄를 용서하여 주셨으니 그 은혜는 태산이 낮고 하해가 얕아서 명명지중이라도 결초보은하겠나이다.","미구에 관직이 오를 것이니두고 보옵소서."),...nn("이렇게 말하고 간 데가 없거늘 부사 놀라 깨어 보니 침상일몽이었다.","그로부터 차차 승진하여 통제사에 이르니 가히 장화 자매의 음덕이 아닌가.")]);await vanish(a);await vanish(b);
     await compareAsk("a3",BQ([185,"네 국법을 가볍게 여기고 못할 짓을 행하여 무죄한 전실 자식을 죽였으니, 그 사연을 바른 대로 아뢰어라."]));
     await writeIt("w3","고친 판정","듣기 기록지에서 처음 판정을 고친 것(또는 판단 보류를 푼 것) 하나를 골라, ‘처음 판정 → 고친 판정 → 고친 까닭’을 써 보세요.","예: 처음에는 ‘낙태한 것’을 믿을 만하다고 보았다 → … → …");
-    await card("중간 제출","듣기 기록지를 내 보자","위의 ‘듣기 기록지’를 열어 ‘글로 복사하기’를 누른 뒤, 선생님이 알려 준 설문지에 붙여 넣으세요(중간 제출).");
+    await submitSheet("3차시 중간");
     await toNext("2차 심문",["부사가 허씨에게 큰 칼을 씌우고 바른 대로 아뢰라 했다","좌수가 어두운 눈에 속았다며 뉘우쳤다","허씨가 매를 이기지 못해 쥐로 꾸민 일과 장쇠에게 시킨 일을 자백했다","장쇠 삼 형제가 부모를 대신해 죽겠다고 했다","부사가 감영에 보고하고 임금의 하교로 처결했다","못에서 두 소저의 시신을 거두어 비를 세웠다"]);
   }};
 
@@ -2750,7 +2789,7 @@ async function c5Review(){
   const qs=["서술자는 왜 허씨의 외모를 이렇게까지 자세히 그렸을까요? 이 표현은 읽는 사람의 판단을 어디로 이끄나요?","1~4장에서 우리는 말과 증거로 허씨를 판단했어요. 서술자는 무엇으로 판단하게 하나요?","외모와 장애를 악함과 묶는 표현을 오늘의 독자로서 어떻게 평가하나요?"];
   await writeIt("w5","서술자의 말 평가",qs[+v]||qs[0]);
   tip("이야기를 들려주는 서술자의 말도 의도와 관점을 가진 말이에요. 서술자가 붙인 이름(‘흉녀’)과 묘사도 듣는 사람의 판단을 이끌어요.");
-  await card("최종 제출","듣기 기록지를 내 보자","위의 ‘듣기 기록지’를 열어 ‘글로 복사하기’를 누른 뒤, 선생님이 알려 준 설문지에 붙여 넣으세요(최종 제출).");
+  await submitSheet("4차시 최종");
   await toNext("배좌수의 귀",["장씨 부인이 두 딸을 남기고 세상을 떠났다","허씨가 쥐로 낙태한 모양을 꾸며 장화의 이불 밑에 넣었다","허씨의 말을 들은 좌수가 장쇠에게 계교를 가르쳤다","장화가 장쇠에게 이끌려 밤길을 떠나 못에 빠졌다","홍련이 계모와 아버지의 모습에서 연고가 있음을 짐작하고 장쇠에게 확인했다","홍련이 청조를 따라가 언니가 빠진 못에 몸을 던졌다"]);
 }
 
