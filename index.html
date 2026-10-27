@@ -2387,7 +2387,7 @@ $("#bEvid").onclick=()=>{const E=G.ex;
 /* ═════════ 설문지 제출 (설계서 6.1): 3차시 중간, 4차시 최종 ═════════
    SUBMIT.url 은 설문지의 formResponse 주소, f 는 칸마다 entry 번호(_작업원본/장화홍련전/설문지/설문지_만들기.gs 가 알려 줌).
    비어 있으면 [제출하기] 대신 [글로 복사하기]만 보인다. */
-const SUBMIT={url:"",f:{cls:"",num:"",name:"",session:"",notes:"",fixes:"",writes:"",progress:"",report:"",memo:""}};
+const SUBMIT={url:"https://docs.google.com/forms/d/e/1FAIpQLSe7DwZ5zj-wEXZ_R0wejfGD9KGdCC516lqzP938hHxiC28ypg/formResponse",f:{cls:"entry.2104676180",num:"entry.1316903091",name:"entry.1376127096",session:"entry.1198655866",notes:"entry.9354911",fixes:"entry.516220630",writes:"entry.953559833",progress:"entry.1992119619",report:"entry.1421168205",memo:"entry.2036094270"}};
 function submitData(session){const E=G.ex,sid=E.sid||{},N=E.notes;
   const fixes=N.filter(n=>n.fix||(n.intent0&&n.intent&&n.intent0!==n.intent)).map(n=>`· 제${n.ch}장 ${n.who}${n.p?` (본문 ${n.p}줄)`:""}: “${short(n.line||n.sum||"")}”\n  처음 판정: ${n.fix?n.fix.from:n.intent0} → 고친 판정: ${n.fix?n.fix.to:n.intent}${n.fix&&n.fix.why?`\n  까닭: ${n.fix.why}`:""}`).join("\n");
   const writes=Object.values(E.writes).map(w=>`· [제${w.ch}장] ${w.t}\n${w.a}`).join("\n\n");
