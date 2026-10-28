@@ -57,6 +57,42 @@ button{font:inherit;color:inherit}
 #dlg .more{position:absolute;right:14px;bottom:8px;font-size:12px;color:var(--mute);animation:blink 1.2s infinite}
 @keyframes blink{50%{opacity:.3}}
 #dlg .opts{display:flex;flex-direction:column;gap:6px;margin-top:8px}
+#stage.zoomed::after{content:"";position:absolute;inset:0;pointer-events:none;background:radial-gradient(ellipse at center,transparent 38%,rgba(0,0,0,.78) 88%);animation:fadeIn .6s both}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+.zcard{position:absolute;right:12px;top:12px;z-index:8;width:min(270px,44%);background:#f6ecd2;color:#2a2219;border:1px solid #b9a172;border-radius:6px;padding:10px 12px;box-shadow:0 10px 30px rgba(0,0,0,.7);animation:zIn .45s cubic-bezier(.2,.8,.2,1.2) both;font-size:13.5px;line-height:1.55}
+.zcard img{width:100%;max-height:150px;object-fit:cover;border-radius:4px;margin-bottom:6px}
+.zcard small{display:block;color:#a3261c;font-weight:700;letter-spacing:.1em;font-size:11px}.zcard b{font-family:var(--display);font-size:16px}.zcard p{margin:4px 0 0}
+@keyframes zIn{from{opacity:0;transform:translateY(-10px) scale(.92)}to{opacity:1;transform:none}}
+.sheet.logic{background:radial-gradient(ellipse at top,#1d2230,#0b0c11);color:#e8e1cd;border:1px solid #3c3a33}
+.sheet.logic h2{color:#f0d79a}.sheet.logic .eb{color:#d26a5c}.sheet.logic .note{color:#c9bfa6}
+.lchain{display:flex;flex-direction:column;align-items:center;gap:2px;margin:12px 0}
+.lnode{width:min(520px,100%);border:1px solid #4b4a44;border-radius:8px;padding:8px 12px;background:rgba(255,255,255,.04);text-align:center}
+.lnode small{display:block;color:#9fa7b8;font-size:12.5px;margin-bottom:2px}.lnode b{font-family:var(--display);font-size:17px}
+.lnode.ok{border-color:#6c8f6a;background:rgba(108,143,106,.12)}.lnode.ok b{color:#cfe7c8}
+.lnode.now{border-color:#d8b25a;box-shadow:0 0 18px rgba(216,178,90,.35)}.lnode.now b{color:#d8b25a}
+.lnode.concl{border:2px solid #d26a5c;background:rgba(210,106,92,.12);animation:zIn .5s both}.lnode.concl b{color:#ffd9c9}
+.lnode.shake{animation:shake .35s}
+.larrow{color:#7d7766;font-size:14px;line-height:1}
+.lflame{display:flex;gap:10px;justify-content:center;margin:6px 0}
+.lflame i{width:10px;height:26px;border-radius:50% 50% 40% 40%;background:radial-gradient(ellipse at 50% 70%,#fff8d0,#ffb23a 50%,rgba(255,120,20,0) 75%);animation:fl .18s infinite alternate}
+.lflame i.out{background:none;border-bottom:3px solid #555;height:6px;border-radius:0;animation:none;align-self:flex-end}
+.chips{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-top:8px}
+.chips button{background:#262a35;border:1px solid #5a5b63;color:#efe6cf;border-radius:999px;padding:8px 16px;font-size:15px;cursor:pointer}
+.chips button:hover{border-color:#d8b25a;color:#ffe9b0}
+.mapv{position:fixed;inset:0;z-index:60;background:rgba(5,4,3,.88);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;padding:10px;animation:fadeIn .4s both}
+.mapv.out{opacity:0;transition:opacity .35s}
+.mapbox{position:relative;width:min(96vw,calc((100vh - 70px)*16/9));aspect-ratio:16/9;border:2px solid #6b5a3a;border-radius:6px;overflow:hidden;box-shadow:0 0 40px rgba(0,0,0,.8)}
+.mapbox>img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;filter:sepia(.25) brightness(.9)}
+.mtitle{position:absolute;left:12px;top:10px;background:rgba(20,14,8,.78);color:#f0d79a;font-family:var(--display);padding:5px 12px;border-radius:4px;font-size:17px}
+.mk{position:absolute;transform:translate(-50%,-50%);background:rgba(25,18,10,.82);border:1px solid #c9a35a;color:#f6ecd2;border-radius:8px;padding:4px 9px;cursor:pointer;display:flex;flex-direction:column;align-items:center;min-width:72px;line-height:1.25}
+.mk i{font-style:normal;color:#ff8a6a;font-size:12px}.mk b{font-size:14px;font-family:var(--display)}.mk small{font-size:11px;color:#cdbf9f;max-width:130px}
+.mk:hover{border-color:#ffd98a;background:rgba(60,40,15,.92)}.mk.here{border-color:#8fc28a}.mk.here i{color:#8fc28a}
+.mk.lock{opacity:.6;cursor:not-allowed}.mk.shake{animation:mkshake .35s}@keyframes mkshake{30%{margin-left:-6px}60%{margin-left:6px}}
+.tok{position:absolute;width:44px;height:44px;margin:-58px 0 0 -22px;border-radius:50%;overflow:hidden;border:2px solid #f0d79a;box-shadow:0 4px 12px rgba(0,0,0,.7);pointer-events:none;z-index:2}
+.tok img{width:100%;height:100%;object-fit:cover;object-position:50% 25%}
+.tok.walk{animation:bob .3s infinite alternate}@keyframes bob{to{margin-top:-64px}}
+.mclose{min-width:160px}
+@media (max-width:640px){.mk small{display:none}.mk{min-width:0;padding:3px 6px}.mk b{font-size:12px}}
 #dlg.roam{cursor:default}#dlg.roam .tx{font-size:15.5px;color:#d8cfb8}
 #dlg .cmd{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}#dlg .cmd .btn{padding:8px 12px;font-size:14.5px}
 .btn.pri{background:#5a3d12;border-color:var(--gold);color:#fff3d6}
@@ -290,7 +326,7 @@ function panel(html){const v=veil(`<button class="close" data-x>×</button>${htm
 
 /* ── 단서 ── */
 function hasClue(id){return G.clues.includes(id)}
-function addClue(id,quiet){if(!CLUES[id]||hasClue(id))return;G.clues.push(id);save();if(!quiet){sfx("clue");toast("단서를 얻었다",CLUES[id].name)}}
+function addClue(id,quiet){if(!CLUES[id]||hasClue(id))return;G.clues.push(id);save();if(!quiet){sfx("clue");toast("단서를 얻었다",CLUES[id].name);if(zoomOn)zcard(id)}}
 function clueCard(id,btn){const c=CLUES[id];return `<${btn?"button":"div"} class="card" ${btn?`data-c="${id}"`:""}>${c.img?`<img src="${art(c.img)}" alt="">`:""}<b>${esc(c.name)}</b>${esc(c.desc)}</${btn?"button":"div"}>`}
 /* 단서 고르기 판: 수첩의 단서 가운데 하나를 고른다 */
 function pickClue(title,q,ans,o){o=o||{};return new Promise(res=>{const ids=G.clues.filter(id=>!o.only||o.only.includes(id));
@@ -329,6 +365,36 @@ function write(id,title,q,ph){return new Promise(res=>{const prev=(G.writes[id]|
 function mapSpot(s){const st=$("#stage"),W=st.clientWidth,Hh=st.clientHeight,k=Math.max(W/1280,Hh/720),iw=1280*k,ih=720*k,ox=(W-iw)/2,oy=(Hh-ih)/2;
   let l=ox+s.x/100*iw,t=oy+s.y/100*ih,r=l+s.w/100*iw,b=t+s.h/100*ih;l=Math.max(4,l);t=Math.max(30,t);r=Math.min(W-4,r);b=Math.min(Hh-4,b);if(b-t<36){const c=(t+b)/2;t=Math.max(30,c-18);b=t+36}
   return `left:${l}px;top:${t}px;width:${r-l}px;height:${b-t}px`}
+/* ── 물건 확대: 누른 곳으로 화면이 다가가고, 그때 얻은 단서는 카드로 곁에 뜬다 ── */
+let zoomOn=false;
+async function focusIn(s){if(AUTO)return;const st=$("#stage"),W=st.clientWidth,Hh=st.clientHeight,k=Math.max(W/1280,Hh/720),iw=1280*k,ih=720*k,ox=(W-iw)/2,oy=(Hh-ih)/2;
+  const cx=ox+(s.x+s.w/2)/100*iw,cy=oy+(s.y+s.h/2)/100*ih,sc=Math.max(1.7,Math.min(3.2,.6*Math.min(W/(s.w/100*iw),Hh/(s.h/100*ih))));
+  const cl=(d,c,L)=>Math.max(L-c-sc*(L-c),Math.min(sc*c-c,d));const dx=cl(W/2-cx,cx,W),dy=cl(Hh/2-cy,cy,Hh);
+  for(const b of [$("#bg"),$("#bg2")]){b.style.transformOrigin=`${cx}px ${cy}px`;b.style.transition="transform .75s cubic-bezier(.2,.7,.2,1),opacity .8s,filter .8s";b.style.transform=`translate(${dx}px,${dy}px) scale(${sc})`}
+  st.classList.add("zoomed");zoomOn=true;$("#hot").style.visibility="hidden";hide();sfx("page");await wait(700)}
+async function focusOut(){if(!zoomOn)return;zoomOn=false;for(const b of [$("#bg"),$("#bg2")])b.style.transform="";$("#stage").classList.remove("zoomed");$("#stage").querySelectorAll(".zcard").forEach(x=>x.remove());$("#hot").style.visibility="";await wait(450)}
+function zcard(id){const c=CLUES[id];const d=document.createElement("div");d.className="zcard";d.innerHTML=`${c.img?`<img src="${art(c.img)}" alt="">`:""}<small>단서</small><b>${esc(c.name)}</b><p>${esc(c.desc)}</p>`;$("#stage").appendChild(d)}
+
+/* ── 추리 로직: 물음마다 열쇠말을 골라 생각의 사슬을 잇는다. 틀릴 때마다 촛불이 하나씩 꺼지고, 다 꺼지면 실마리를 준다.
+   logic({id, title, steps:[{q, opts, ans, hint}], concl, stance:{q?}}) — stance 가 있으면 끝에 ‘판단의 저울’(확정·의심·보류)을 고른다 ── */
+function logic(L){return new Promise(res=>{G.logic=G.logic||{};G.stance=G.stance||{};const rec={t:L.title,wrong:0};let k=0;const chain=[];
+  const v=veil("","logic"),S=v.querySelector(".sheet");sfx("page");
+  const paint=(msg,bad)=>{const s=L.steps[k];const lit=Math.max(0,3-rec.wrong%4);
+    S.innerHTML=`<span class="eb">추리 로직</span><h2>${esc(L.title)}</h2><div class="lchain">${chain.map((c,i)=>`<div class="lnode ok"><small>${esc(L.steps[i].q)}</small><b>${esc(c)}</b></div>`).join('<div class="larrow">↓</div>')}
+      ${s?`${chain.length?'<div class="larrow">↓</div>':""}<div class="lnode now${bad?" shake":""}"><small>${esc(s.q)}</small><b>？</b></div>`:`<div class="larrow">↓</div><div class="lnode concl"><small>결론</small><b>${esc(L.concl)}</b></div>`}</div>
+      ${s?`<div class="lflame">${"<i></i>".repeat(lit)}${"<i class=out></i>".repeat(3-lit)}</div>${msg?`<p class="note">${esc(msg)}</p>`:""}<div class="chips">${s.opts.map((o,i)=>`<button data-o="${i}">${esc(o)}</button>`).join("")}</div>`
+      :`<div class="row"><button class="btn pri" data-done>추리 완성 ▶</button></div>`}`};
+  paint();
+  v.addEventListener("click",async e=>{const o=e.target.closest("[data-o]");
+    if(o){const s=L.steps[k];if(+o.dataset.o===s.ans){sfx("ok");chain.push(s.opts[s.ans]);k++;if(k>=L.steps.length)sfx("stamp");paint()}
+      else{sfx("bad");G.wrong++;rec.wrong++;const out=rec.wrong%4===3;if(out)sfx("candle");paint(out?"촛불이 모두 꺼졌다… 실마리: "+(s.hint||"모은 단서를 다시 떠올려 보자."):"아니다. 다른 열쇠말을 골라 보자.",true)}return}
+    if(e.target.closest("[data-done]")){G.logic[L.id]=Object.assign(rec,{concl:L.concl});save();v.remove();
+      if(L.stance){const opts=["확정 · 증거로 확인되었다","의심 · 정황은 맞아 들어가지만 아직 확인이 필요하다","보류 · 판단할 근거가 모자라다"];
+        const c=await choose(L.stance.q||"이 추리를 얼마나 믿을 수 있나?",opts,{tag:"판단의 저울",ans:L.stance.ans!=null?L.stance.ans:0});
+        G.stance[L.id]={q:L.stance.q||L.title,a:opts[c]};save();await ME(L.stance.say?L.stance.say[c]:"어느 쪽이든, 내 판단을 받쳐 주는 근거가 무엇인지 말할 수 있어야 한다.")}
+      res()}});
+  if(AUTO){G.logic[L.id]=Object.assign(rec,{concl:L.concl});v.remove();(async()=>{if(L.stance){const c=L.stance.ans!=null?L.stance.ans:0;G.stance[L.id]={q:L.stance.q||L.title,a:["확정","의심","보류"][c]}}save();res()})()}})}
+
 function investigate(cfg){return new Promise(res=>{const H=$("#hot");const done=new Set();adv=null;
   const paint=()=>{H.innerHTML=`<div class="hint">🔎 ${esc(cfg.hint||"수상한 곳을 눌러 살펴보자.")} (${[...done].filter(x=>cfg.need.includes(x)).length}/${cfg.need.length})</div>`+cfg.spots.map(s=>`<button class="spot${done.has(s.id)?" done":""}" data-s="${s.id}" title="${esc(s.name)}" aria-label="${esc(s.name)}" style="${mapSpot(s)}"><span>${esc(s.name)}</span></button>`).join("")};
   const onRs=()=>{if(H.querySelector(".spot"))paint()};window.addEventListener("resize",onRs);const fin=res;res=()=>{window.removeEventListener("resize",onRs);fin()};
@@ -336,7 +402,7 @@ function investigate(cfg){return new Promise(res=>{const H=$("#hot");const done=
   D.querySelector("[data-show]").onclick=()=>H.classList.toggle("show");
   let busy=false;paint();
   H.onclick=async e=>{const b=e.target.closest("[data-s]");if(!b||busy)return;const s=cfg.spots.find(x=>x.id===b.dataset.s);busy=true;H.style.pointerEvents="none";sfx("page");
-    await s.run();done.add(s.id);busy=false;H.style.pointerEvents="";
+    await focusIn(s);await s.run();await focusOut();done.add(s.id);busy=false;H.style.pointerEvents="";
     if(cfg.need.every(x=>done.has(x))){H.innerHTML="";H.classList.remove("show");H.onclick=null;res()}else{paint();D.className="think";D.innerHTML=`<div class="nm">조사</div><div class="tx">${esc(cfg.hint||"")}</div><div class="row"><button class="btn" data-show>살필 곳 보이기</button></div>`;D.querySelector("[data-show]").onclick=()=>H.classList.toggle("show")}};
   if(AUTO)(async()=>{for(const id of cfg.need){const b=H.querySelector(`[data-s="${id}"]`);if(b)await H.onclick({target:b})}})()})}
 
@@ -406,21 +472,39 @@ function roam(R){return new Promise(res=>{const H=$("#hot");let place=G.roamAt&&
       if(c==="@pres"){const id=await pickClue("증거 내밀기",NAMES[w]+"에게 무엇을 보일까?");if(!id)continue;const r=(Pp.present||{})[id];
         if(typeof r==="function")await r();else await talk(r||Pp.presentDefault||[[w,"…그것이 소인과 무슨 상관이옵니까?"]]);continue}
       const t=ts.find(x=>x.id===c);mark(R.id,w+":"+t.id);if(await t.run()===false){delete G.seen[R.id+":"+w+":"+t.id];save()}}}
-  H.onclick=e=>{const s=e.target.closest("[data-s]");if(s){const sp=P(place).spots.find(x=>x.id===s.dataset.s);go(async()=>{sfx("page");if(await sp.run()!==false)mark(R.id,"spot:"+sp.id)});return}
+  H.onclick=e=>{const s=e.target.closest("[data-s]");if(s){const sp=P(place).spots.find(x=>x.id===s.dataset.s);go(async()=>{await focusIn(sp);const r=await sp.run();await focusOut();if(r!==false)mark(R.id,"spot:"+sp.id)});return}
     const f=e.target.closest("[data-w]");if(f)go(()=>talkTo(f.dataset.w))};
   D.addEventListener("click",function onD(e){if(fin){D.removeEventListener("click",onD);return}if(busy)return;
     const w=e.target.closest(".cmd [data-w]");if(w){go(()=>talkTo(w.dataset.w));return}
     if(e.target.closest("[data-look]")){H.classList.toggle("show");return}
     if(e.target.closest("[data-goal]")){panel(`<span class="eb">수사 목표</span><h2>${esc(R.title)}</h2>${goalHtml()}<p class="note">● 표시가 있는 곳·사람에게 아직 알아낼 것이 있어요. 인물의 ‘분위기 살피기’도 잊지 마세요.</p>`);return}
     if(e.target.closest("[data-fin]")){done();return}
-    if(e.target.closest("[data-map]")){const v=panel(`<span class="eb">다른 곳으로</span><h2>어디로 갈까?</h2><div class="places">${Object.keys(R.places).map(k=>{const p=P(k),lk=p.lock&&p.lock();return `<button data-p="${k}" ${lk?"disabled":""} class="${k===place?"here":""}"><b>${todo(k)?"● ":""}${esc(p.name)}</b><small>${lk?esc(lk):esc(ppl(k).map(x=>NAMES[x]).join(" · ")||"사람 없음")}</small></button>`}).join("")}</div>`);
-      v.addEventListener("click",ev=>{const b=ev.target.closest("[data-p]");if(!b||b.disabled)return;v.remove();sfx("step");go(()=>enter(b.dataset.p))});return}});
+    if(e.target.closest("[data-map]")){go(async()=>{const k=await worldMap(R,place,todo,ppl);if(k&&k!==place)await enter(k)});return}});
   const onRs=()=>{if(!fin&&!busy)menu()};window.addEventListener("resize",onRs);const fin0=done;
   if(AUTO){(async()=>{await enter(place);for(let pass=0;pass<6&&!goalsOk();pass++)for(const k of Object.keys(R.places)){const p=P(k);if(p.lock&&p.lock())continue;await enter(k);
       for(const s of p.spots||[])if(s.key&&!seen(R.id,"spot:"+s.id)){if(await s.run()!==false)mark(R.id,"spot:"+s.id)}
       for(const w of ppl(k)){for(const t of tops(w))if(t.key&&!seen(R.id,w+":"+t.id)){mark(R.id,w+":"+t.id);if(await t.run()===false){delete G.seen[R.id+":"+w+":"+t.id];save()}}if(R.people[w]&&R.people[w].moodRun&&!seen(R.id,w+":@mood")){mark(R.id,w+":@mood");await R.people[w].moodRun()}}}
     window.removeEventListener("resize",onRs);fin0()})();return}
   go(()=>enter(place))})}
+
+
+/* ── 고을 지도: 장소를 눌러 현감 말을 그곳까지 걸려 보낸다. 자리는 bg_map 그림 위의 % ── */
+const MAPPOS={dongheon:[24,24],archive:[13,41],lab:[13,41],gaeksa:[30,43],market:[49,44],yard:[70,62],hall:[73,40],room:[85,48],sarang:[87,64],laundry:[93,44],yard2:[78,28]};
+function worldMap(R,place,todo,ppl){return new Promise(res=>{const ks=Object.keys(R.places);
+  const v=document.createElement("div");v.className="mapv";
+  v.innerHTML=`<div class="mapbox"><img src="${art("bg_map")}" alt="철산 고을 지도"><div class="mtitle">철산 고을 · 어디로 갈까?</div>${ks.map(k=>{const p=R.places[k],lk=p.lock&&p.lock(),q=MAPPOS[k]||[50,50];
+      return `<button class="mk${k===place?" here":""}${lk?" lock":""}" data-p="${k}" style="left:${q[0]}%;top:${q[1]}%;transform:translate(${q[0]>80?-88:q[0]<15?-12:-50}%,-50%)"><i>${lk?"🔒":todo(k)?"●":k===place?"◆":"○"}</i><b>${esc(p.name)}</b><small>${lk?esc(lk):esc(ppl(k).map(x=>NAMES[x]).join(" · ")||"사람 없음")}</small></button>`}).join("")}
+    <div class="tok" style="left:${(MAPPOS[place]||[50,50])[0]}%;top:${(MAPPOS[place]||[50,50])[1]}%"><img src="${art("p_me")}" alt="현감"></div></div><button class="btn mclose" data-x>그대로 머문다</button>`;
+  document.body.appendChild(v);sfx("page");let moving=false;
+  v.addEventListener("click",async e=>{if(moving)return;if(e.target===v||e.target.closest("[data-x]")){v.remove();res(null);return}
+    const b=e.target.closest("[data-p]");if(!b)return;const k=b.dataset.p,p=R.places[k];
+    if(p.lock&&p.lock()){sfx("bad");b.classList.add("shake");setTimeout(()=>b.classList.remove("shake"),400);return}
+    if(k===place){v.remove();res(k);return}
+    moving=true;const t=v.querySelector(".tok"),a=MAPPOS[place]||[50,50],z=MAPPOS[k]||[50,50];const dist=Math.hypot(z[0]-a[0],z[1]-a[1]);const ms=Math.min(2200,Math.max(700,dist*38));
+    t.style.transition=`left ${ms}ms ease-in-out,top ${ms}ms ease-in-out`;t.classList.add("walk");void t.offsetWidth;t.style.left=z[0]+"%";t.style.top=z[1]+"%";
+    for(let i=0;i<Math.round(ms/300);i++){sfx("step");await wait(300)}
+    await wait(200);v.classList.add("out");await wait(350);v.remove();res(k)});
+  if(AUTO){v.remove();res(null)}})}
 
 /* ── 수첩 · 보드 · 기록지 ── */
 $("#bNote").onclick=()=>noteBook(0);
@@ -495,6 +579,7 @@ function askSlot(cfg){if(AUTO)return Promise.resolve();return new Promise(res=>{
 /* ═════════ 기록지 글 ═════════ */
 function notesText(){const L=["[듣기 기록지] 젖은 발자국 — 철산 괴담 수사록"];
   for(const n of G.notes){L.push(`· 제${n.ch}장 ${n.who}: “${n.line}”`);L.push(`  속뜻: ${n.intent0}${n.intent0!==n.intent?` → ${n.intent}`:""} / 근거: ${n.cue} / ${n.res}`);if(n.hold)L.push(`  믿을 만한가: ${n.hold}`);if(n.fix)L.push(`  고친 판정: ${n.fix.from} → ${n.fix.to}${n.fix.why?` (까닭: ${n.fix.why})`:""}`)}
+  for(const [id,l] of Object.entries(G.logic||{}))L.push(`· 추리 로직 「${l.t}」 → ${l.concl} (헛짚은 횟수 ${l.wrong})`+((G.stance||{})[id]?` / 판단의 저울: ${G.stance[id].a}`:""));
   for(const a of Object.values(G.asks)){if(!a.qs.length)continue;L.push(`· AI 심문(${a.t})`);for(const x of a.qs){L.push(`  ${NAMES[x.who]}에게 “${x.q}”`+(x.a?` → AI 대답: ${x.a}`:""));if(x.pick!=null&&x.intent>=0)L.push(`    내 판정: ${AI_INTENTS[x.pick]} / AI가 밝힌 속셈: ${AI_INTENTS[x.intent]}`)}}
   return L.join("\n")}
 
@@ -687,6 +772,13 @@ async function ch1(){bg("cover");setDrone(true);
   await N("날이 밝았다. 현감은 몸소 고을을 돌며 연이의 일을 알아보기로 했다.");
   await ME("누구에게 무엇을 물을지는 내가 정한다. 말만 듣지 말고, 기록과 얼굴도 살피자. 들은 말인지 본 말인지도 가려 듣자.");
   await roam(R1);
+  await logic({id:"l1",title:"현감들은 왜 쓰러졌나",steps:[
+    {q:"앞선 현감들은 모두 어디에서 쓰러졌나?",opts:["동헌 마루","객사의 첫날 밤","장터 주막"],ans:1,hint:"이방이 앞선 사또들 이야기를 해 주었다."},
+    {q:"그 방에서만 늘 새로 들인 것은?",opts:["단내 나는 새 초","낡은 이불","원혼의 울음소리"],ans:0,hint:"기록고 선반의 부임 기록과 앞 현감의 일기를 떠올려 보자."},
+    {q:"그 초 곁에 오래 있으면 어떻게 되나?",opts:["잠이 깬다","머리가 핑 돌고 눈앞이 흔들린다","배가 고파진다"],ans:1,hint:"통인 아이는 왜 늘 문밖에 있었을까?"},
+    {q:"그 초는 누가 들여오나?",opts:["이방","주모","객주집 마 서방"],ans:2,hint:"통인 아이에게 들은 말이다."}],
+    concl:"현감들을 쓰러뜨린 것은 원혼이 아니라 새 초일 수 있다. 그 초를 들여오는 마 서방을 살펴야 한다.",
+        stance:{q:"‘새 초가 현감들을 쓰러뜨렸다’ — 이 추리를 얼마나 믿을 수 있나?",ans:1,say:["확정하기엔 이르다. 초를 갈라 보지도 않았고, 통인 아이의 말도 느낌일 뿐이다.","그래. 정황은 맞아 들어가지만 초 속을 확인하지 않았다. 의심을 품고 확인할 거리를 찾자.","근거가 아주 없지는 않다. 일기, 통인 아이의 말, 초를 들여온 사람까지 맞아 들어간다. 의심해 볼 만하다."]}});
   await write("w1","제1장 기록","지금 누구의 말을 믿는가? 왜 그렇게 생각하는가? (들은 말과 본 말을 가려 써 보자)","예: 원혼의 말은 ○○ 때문에 아직 다 믿을 수 없다. 주모의 말은 들은 말이라…");
   await oldTale("새 부사마다 첫날 밤 홍련의 원혼을 보고 놀라 죽었다. 정동호만이 원혼의 호소를 끝까지 들었다.","이 사건에서도 원혼이 누명을 호소한다. 그런데 현감들이 쓰러진 까닭은 정말 원혼 때문이었을까?")}
 
@@ -767,6 +859,12 @@ async function ch2(){bg("bg_gaekju");
   if(w!=="2"){sfx("bad");G.wrong++;await ME("근거(주머니가 나왔다)는 여러 사람이 보았다. 그런데 ‘그것을 연이가 넣었다’는 누가 확인했지?")}
   sfx("ok");await ME("가장 약한 칸은 숨은 전제다. 함에 든 것을 연이가 넣었다는 것은 아무도 확인하지 않았다. 누구든 넣을 수 있었다.");
   await ME("…지금으로선 판단을 미룰 수밖에 없다. 오씨가 수상하긴 하지만, 증거가 모자라다.");
+  await logic({id:"l2",title:"연이는 정말 도둑인가",steps:[
+    {q:"‘연이가 달아났다’는 소문은 누구 입에서 나왔나?",opts:["머슴 돌쇠","원혼","이방"],ans:0,hint:"주모가 들려준 소문의 출처."},
+    {q:"그 사람은 그 밤 무엇을 했나?",opts:["연이 방을 지켰다","노름판에 있다가 새벽에 돌아왔다","관아에 신고했다"],ans:1,hint:"주모의 말과 돌쇠의 증언을 견주어 보자."},
+    {q:"그렇다면 그 소문은 어떤 말인가?",opts:["직접 본 말","보지 않고 짐작한 말"],ans:1,hint:"돌쇠가 본 것은 불빛뿐이었다."},
+    {q:"함 속 은자 주머니를 연이가 넣는 것을 본 사람은?",opts:["오씨","마 서방","아무도 없다"],ans:2,hint:"논증 해부에서 가장 약한 칸이 무엇이었지?"}],
+    concl:"‘연이는 도둑이다’는 본 사람 없는 짐작 위에 서 있다. 연이를 도둑이라 할 근거는 아직 없다."});
   await write("w2","제2장 기록","거짓말을 한 사람이 여럿이다. 송 객주, 오씨, 돌쇠는 각각 무엇을 지키려고 그렇게 말했을까? 분위기를 살펴 알게 된 것도 써 보자.","예: 송 객주는 ○○을 지키려고 … 오씨는 … 돌쇠의 소매에서 …")}
 
 /* ═════════ 제3장 불빛에 비춘 편지 (2차시) ═════════ */
@@ -810,6 +908,14 @@ async function ch3(){bg("bg_gaeksa");dark(true);setDrone(true);
   await ME("편지, 매듭, 그리고 객사의 초. 하나씩 감정해 보자. 연이를 잘 아는 사람도 찾아야 한다.");
   await roam(R3);
   await settle("h_ghost","원혼의 말(등불 든 사람, 먹 냄새)은 이제 어떻게 판단할까?",["아직 다 확인되진 않았지만, 편지·매듭·초가 모두 원혼의 말과 맞아 들어간다","원혼의 말은 헛것이었다","원혼이 범인을 정확히 알려 주었다"],0,"원혼의 말 가운데 확인된 것이 늘었다. 그래도 범인 얼굴은 원혼도 못 보았다.");
+  await logic({id:"l3",title:"편지와 주머니는 누가 꾸몄나",steps:[
+    {q:"편지 뒷면에 비친 날짜는?",opts:["삼월 열하루","삼월 열엿새","사월 초하루"],ans:1,hint:"불빛에 비춰 본 편지 뒷면."},
+    {q:"그 날짜는 연이가 사라진 날과 어떤 관계인가?",opts:["사라지기 전","사라진 날","사라지고 닷새 뒤"],ans:2,hint:"관아의 실종 기록: 삼월 열하루."},
+    {q:"그러면 편지를 쓴 사람은?",opts:["연이","연이가 사라진 뒤 가게 장부 종이를 쓸 수 있던 사람"],ans:1,hint:"사라진 사람은 그 뒤의 종이에 글을 쓸 수 없다."},
+    {q:"은자 주머니의 매듭은?",opts:["연이가 늘 매던 나비 매듭","장사꾼이 쓰는 네모진 상인 매듭"],ans:1,hint:"복이의 주머니와 견주어 본 매듭."},
+    {q:"장부 종이와 상인 매듭을 함께 다루는 사람은?",opts:["오씨","장부를 맡은 마 서방","돌쇠"],ans:1,hint:"객주에서 장부를 맡은 사람은 누구였지?"}],
+    concl:"편지와 주머니는 연이가 사라진 뒤 장부를 다루는 손이 꾸민 것이다. 가장 의심스러운 사람은 마 서방이다.",
+        stance:{q:"‘마 서방이 편지와 주머니를 꾸몄다’ — 이 추리를 얼마나 믿을 수 있나?",ans:1,say:["종이와 매듭은 마 서방을 가리킨다. 그러나 마 서방이 직접 했다는 증거는 아직 없다. 단정은 조금 더 확인한 뒤에 하자.","그래. 종이와 매듭이 모두 마 서방을 가리키지만, 그가 했다는 확인은 아직이다. 마지막 증거를 찾자.","증거가 이만큼 모였는데 미뤄 둘까? 종이와 매듭이 모두 한 사람을 가리킨다. 적어도 의심할 근거는 넉넉하다."]}});
   await write("w3","제3장 기록","지금 가장 의심스러운 사람은 누구인가? 처음에 의심한 사람과 같은가, 다른가? 그 까닭은?","예: 처음엔 ○○를 의심했지만, ○○ 단서 때문에…");
   await oldTale("부사는 허씨가 내놓은 ‘낙태한 것’을 보고 한 번 속았다. 원혼의 말대로 배를 갈라 보니 쥐똥이 가득했다.","이 사건의 편지와 주머니도 ‘너무 잘 준비된 증거’였다. 겉만 보지 않고 비춰 보고 견주어 보니 꾸민 것이 드러났다.")}
 async function knotExam(){const k=await sheet(`<span class="eb">감정 · 매듭 견주기</span><h2>은자 주머니의 매듭은 누구의 매듭인가?</h2>
@@ -972,7 +1078,7 @@ async function chainOfWords(){const A=[["마 서방 → 오씨","“아씨 방�
   for(const a of A)await quiz(`${a[0]} : ${a[1]}`,a[2],a[3],"그 사람은 무엇을 직접 보았고, 무엇을 들었지?",{tag:"말이 옮겨 간 길"});
   await ME("이 길에서 확인한 사람은 아무도 없었다. 단 한 사람만, 한 번만 물었더라도 누명은 거기서 멈췄을 것이다. 그리고 들은 말임을 밝힌 사람은 이방 한 사람뿐이었다.")}
 
-async function ending(){bg("cover");hide();await sheet(`<div style="text-align:center;padding:20px 6px"><span class="eb">수사 끝</span><h2 style="font-size:28px">젖은 발자국</h2><p class="note">모은 단서 ${G.clues.length}개 · 듣기 판정 ${G.notes.length}개 · 되짚은 횟수 ${G.wrong}</p><div class="row" style="justify-content:center"><button class="btn pri" data-go="1">표지로</button></div></div>`);G.ch=0;save();if(AUTO){window.AUTO_DONE=1;return}title()}
+async function ending(){bg("cover");hide();await sheet(`<div style="text-align:center;padding:20px 6px"><span class="eb">수사 끝</span><h2 style="font-size:28px">젖은 발자국</h2><p class="note">모은 단서 ${G.clues.length}개 · 듣기 판정 ${G.notes.length}개 · 되짚은 횟수 ${G.wrong}</p>${Object.entries(G.logic||{}).map(([id,l])=>`<p class="note" style="text-align:left">🕯 ${esc(l.t)} — ${esc(l.concl)}${(G.stance||{})[id]?`<br>　판단의 저울: <b>${esc(G.stance[id].a)}</b>`:""}</p>`).join("")}<div class="row" style="justify-content:center"><button class="btn pri" data-go="1">표지로</button></div></div>`);G.ch=0;save();if(AUTO){window.AUTO_DONE=1;return}title()}
 
 /* ═════════ 시작 ═════════ */
 load();hud();title();
