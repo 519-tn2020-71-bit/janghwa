@@ -93,6 +93,22 @@ button{font:inherit;color:inherit}
 .tok.walk{animation:bob .3s infinite alternate}@keyframes bob{to{margin-top:-64px}}
 .mclose{min-width:160px}
 @media (max-width:640px){.mk small{display:none}.mk{min-width:0;padding:3px 6px}.mk b{font-size:12px}}
+.tbar{height:6px;background:rgba(255,255,255,.12);border-radius:3px;margin:8px 0 4px;overflow:hidden}.tbar i{display:block;height:100%;width:100%;background:#d8b25a}
+.pair{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:8px 0}.pair>b{font-size:20px;color:#a3261c}
+.pair .slot{min-width:120px;min-height:44px;border:2px dashed #b9a172;border-radius:8px;display:flex;align-items:center;justify-content:center;padding:6px 10px;color:#8a7a5a;font-weight:700}
+.pair .slot.full{border-style:solid;border-color:#a3261c;color:#2a2219;background:#fff7e3}
+.card.sel{outline:3px solid #a3261c;outline-offset:2px}
+.smap{position:relative;width:100%;aspect-ratio:4/3;max-height:62vh;margin:8px auto;background:radial-gradient(ellipse,#232633,#11131a);border:1px solid #3c3a33;border-radius:8px}
+.smap svg{position:absolute;inset:0;width:100%;height:100%}
+.smap line{stroke:#6d6a60;stroke-width:.6;vector-effect:non-scaling-stroke;stroke-width:2}
+.smap line.k0{stroke:#cfe7c8;stroke-width:3}.smap line.k1{stroke:#9fb4d8;stroke-dasharray:8 6;stroke-width:2.5}.smap line.k2{stroke:#e0705f;stroke-dasharray:3 6;stroke-width:2.5}
+.snode{position:absolute;transform:translate(-50%,-50%);background:#3a3026;color:#f0d79a;border:1px solid #8a744a;border-radius:999px;padding:4px 12px;font-family:var(--display);font-size:15px;white-space:nowrap}
+.snode.me{background:#5a1f18;border-color:#d26a5c;color:#ffe2d6}
+.sedge{position:absolute;transform:translate(-50%,-50%);width:27%;background:rgba(15,16,22,.92);border:1px solid #5a5b63;color:#e8e1cd;border-radius:8px;padding:4px 7px;font-size:11.5px;line-height:1.35;cursor:pointer;z-index:2}
+.sedge small{display:block;color:#9fa7b8;font-size:10.5px}.sedge b{display:block;margin-top:2px;color:#d8b25a;font-size:12.5px}
+.sedge.k0{border-color:#8fc28a}.sedge.k0 b{color:#cfe7c8}.sedge.k1{border-color:#9fb4d8}.sedge.k1 b{color:#c8d6f0}.sedge.k2{border-color:#e0705f}.sedge.k2 b{color:#ffb4a6}
+.sedge.shake{animation:mkshake .35s}
+@media (max-width:640px){.sedge{max-width:38%;font-size:10.5px}.snode{font-size:12px;padding:3px 8px}}
 #dlg.roam{cursor:default}#dlg.roam .tx{font-size:15.5px;color:#d8cfb8}
 #dlg .cmd{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}#dlg .cmd .btn{padding:8px 12px;font-size:14.5px}
 .btn.pri{background:#5a3d12;border-color:var(--gold);color:#fff3d6}
@@ -313,6 +329,13 @@ function choose(q,opts,o){o=o||{};return new Promise(res=>{const who=o.who||"me"
   D.innerHTML=`<div class="nm">${esc(who==="me"?"나 · 새 현감":NAMES[who]||"")}${o.tag?`<span class="tag">${esc(o.tag)}</span>`:""}</div><div class="tx">${esc(q)}</div><div class="opts">${opts.map((t,k)=>`<button data-k="${k}">${esc(t)}</button>`).join("")}</div>`;
   adv=null;D.querySelectorAll("[data-k]").forEach(b=>b.onclick=()=>{sfx("blip");res(+b.dataset.k)});
   if(AUTO)setTimeout(()=>res(o.ans!=null?o.ans:0),0)})}
+/* 시간 안에 고른다. 시간이 다 가면 -1. 깜짝 효과를 약하게 하면 시간 제한이 없다 */
+function timedChoose(q,opts,sec,o){o=o||{};return new Promise(res=>{let done=false;const end=k=>{if(done)return;done=true;clearInterval(t);res(k)};
+  D.className="think";D.innerHTML=`<div class="nm">${esc(NAMES.me)}<span class="tag">${esc(o.tag||"어떻게 할까")}</span></div><div class="tx">${esc(q)}</div>${G.soft?"":'<div class="tbar"><i></i></div>'}<div class="opts">${opts.map((x,k)=>`<button data-k="${k}">${esc(x)}</button>`).join("")}</div>`;
+  adv=null;D.querySelectorAll("[data-k]").forEach(b=>b.onclick=()=>{sfx("blip");end(+b.dataset.k)});
+  const bar=D.querySelector(".tbar i"),t0=Date.now();let t=null;
+  if(!G.soft&&!AUTO)t=setInterval(()=>{const p=1-(Date.now()-t0)/(sec*1000);if(bar)bar.style.width=Math.max(0,p*100)+"%";if(p<=.3&&bar)bar.style.background="#c0392b";if(p<=0)end(-1)},50);
+  if(AUTO)setTimeout(()=>end(o.ans!=null?o.ans:0),0)})}
 /* 맞을 때까지 고른다. 처음 고른 것을 돌려준다 */
 async function quiz(q,opts,ans,hint,o){let first=null;for(;;){const c=await choose(q,opts,Object.assign({ans},o||{}));if(first==null)first=c;if(c===ans){sfx("ok");return first}sfx("bad");G.wrong++;await ME(hint||"다시 생각해 보자.")}}
 
@@ -377,7 +400,7 @@ function zcard(id){const c=CLUES[id];const d=document.createElement("div");d.cla
 
 /* ── 추리 로직: 물음마다 열쇠말을 골라 생각의 사슬을 잇는다. 틀릴 때마다 촛불이 하나씩 꺼지고, 다 꺼지면 실마리를 준다.
    logic({id, title, steps:[{q, opts, ans, hint}], concl, stance:{q?}}) — stance 가 있으면 끝에 ‘판단의 저울’(확정·의심·보류)을 고른다 ── */
-function logic(L){return new Promise(res=>{G.logic=G.logic||{};G.stance=G.stance||{};const rec={t:L.title,wrong:0};let k=0;const chain=[];
+function logic(L){return new Promise(res=>{G.logic=G.logic||{};G.stance=G.stance||{};const rec={t:L.title,wrong:0,sw:L.steps.map(()=>0)};let k=0;const chain=[];
   const v=veil("","logic"),S=v.querySelector(".sheet");sfx("page");
   const paint=(msg,bad)=>{const s=L.steps[k];const lit=Math.max(0,3-rec.wrong%4);
     S.innerHTML=`<span class="eb">추리 로직</span><h2>${esc(L.title)}</h2><div class="lchain">${chain.map((c,i)=>`<div class="lnode ok"><small>${esc(L.steps[i].q)}</small><b>${esc(c)}</b></div>`).join('<div class="larrow">↓</div>')}
@@ -387,13 +410,16 @@ function logic(L){return new Promise(res=>{G.logic=G.logic||{};G.stance=G.stance
   paint();
   v.addEventListener("click",async e=>{const o=e.target.closest("[data-o]");
     if(o){const s=L.steps[k];if(+o.dataset.o===s.ans){sfx("ok");chain.push(s.opts[s.ans]);k++;if(k>=L.steps.length)sfx("stamp");paint()}
-      else{sfx("bad");G.wrong++;rec.wrong++;const out=rec.wrong%4===3;if(out)sfx("candle");paint(out?"촛불이 모두 꺼졌다… 실마리: "+(s.hint||"모은 단서를 다시 떠올려 보자."):"아니다. 다른 열쇠말을 골라 보자.",true)}return}
+      else{sfx("bad");G.wrong++;rec.wrong++;rec.sw[k]++;const out=rec.wrong%4===3;if(out)sfx("candle");paint(out?"촛불이 모두 꺼졌다… 실마리: "+(s.hint||"모은 단서를 다시 떠올려 보자."):"아니다. 다른 열쇠말을 골라 보자.",true)}return}
     if(e.target.closest("[data-done]")){G.logic[L.id]=Object.assign(rec,{concl:L.concl});save();v.remove();
       if(L.stance){const opts=["확정 · 증거로 확인되었다","의심 · 정황은 맞아 들어가지만 아직 확인이 필요하다","보류 · 판단할 근거가 모자라다"];
-        const c=await choose(L.stance.q||"이 추리를 얼마나 믿을 수 있나?",opts,{tag:"판단의 저울",ans:L.stance.ans!=null?L.stance.ans:0});
-        G.stance[L.id]={q:L.stance.q||L.title,a:opts[c]};save();await ME(L.stance.say?L.stance.say[c]:"어느 쪽이든, 내 판단을 받쳐 주는 근거가 무엇인지 말할 수 있어야 한다.")}
+        const ask=()=>choose(L.stance.q||"이 추리를 얼마나 믿을 수 있나?",opts,{tag:"판단의 저울",ans:L.stance.ans!=null?L.stance.ans:0});
+        let c=await ask();const first=opts[c].split(" · ")[0];
+        /* 서두른 판단이면 그 판단대로 했을 때 벌어질 일을 먼저 보여 주고 다시 저울질한다 */
+        if(L.stance.bad&&L.stance.bad[c]){await L.stance.bad[c]();c=await ask()}
+        G.stance[L.id]={q:L.stance.q||L.title,a:opts[c].split(" · ")[0],first};save();await ME(L.stance.say?L.stance.say[c]:"어느 쪽이든, 내 판단을 받쳐 주는 근거가 무엇인지 말할 수 있어야 한다.")}
       res()}});
-  if(AUTO){G.logic[L.id]=Object.assign(rec,{concl:L.concl});v.remove();(async()=>{if(L.stance){const c=L.stance.ans!=null?L.stance.ans:0;G.stance[L.id]={q:L.stance.q||L.title,a:["확정","의심","보류"][c]}}save();res()})()}})}
+  if(AUTO){G.logic[L.id]=Object.assign(rec,{concl:L.concl});v.remove();(async()=>{if(L.stance){const c=L.stance.ans!=null?L.stance.ans:0;G.stance[L.id]={q:L.stance.q||L.title,a:["확정","의심","보류"][c],first:["확정","의심","보류"][c]}}save();res()})()}})}
 
 function investigate(cfg){return new Promise(res=>{const H=$("#hot");const done=new Set();adv=null;
   const paint=()=>{H.innerHTML=`<div class="hint">🔎 ${esc(cfg.hint||"수상한 곳을 눌러 살펴보자.")} (${[...done].filter(x=>cfg.need.includes(x)).length}/${cfg.need.length})</div>`+cfg.spots.map(s=>`<button class="spot${done.has(s.id)?" done":""}" data-s="${s.id}" title="${esc(s.name)}" aria-label="${esc(s.name)}" style="${mapSpot(s)}"><span>${esc(s.name)}</span></button>`).join("")};
@@ -508,12 +534,23 @@ function worldMap(R,place,todo,ppl){return new Promise(res=>{const ks=Object.key
 
 /* ── 수첩 · 보드 · 기록지 ── */
 $("#bNote").onclick=()=>noteBook(0);
-function noteBook(tab){const tabs=["단서","인물","나눈 말"];const v=panel(`<span class="eb">사건 수첩</span><h2>${esc(CASE_NAME)}</h2><div class="tabs">${tabs.map((t,i)=>`<button data-t="${i}" class="${i===tab?"on":""}">${t}</button>`).join("")}</div><div id="nb"></div>`);
+function noteBook(tab){const tabs=["단서","인물","나눈 말","🧩 맞붙이기"];let pair=[],msg="";const v=panel(`<span class="eb">사건 수첩</span><h2>${esc(CASE_NAME)}</h2><div class="tabs">${tabs.map((t,i)=>`<button data-t="${i}" class="${i===tab?"on":""}">${t}</button>`).join("")}</div><div id="nb"></div>`);
   const body=v.querySelector("#nb");const draw=t=>{v.querySelectorAll("[data-t]").forEach(b=>b.classList.toggle("on",+b.dataset.t===t));
     if(t===0)body.innerHTML=G.clues.length?`<div class="cards">${G.clues.map(id=>clueCard(id)).join("")}</div>`:'<p class="note">아직 모은 단서가 없어요.</p>';
     if(t===1)body.innerHTML=PEOPLE.filter(p=>G.ch>=p.from).map(p=>`<div class="person"><img src="${art(PORT[p.who]||"p_ibang")}" alt=""><div><b>${esc(NAMES[p.who])}</b> <small>${esc(p.role)}</small><div>${esc(p.desc)}</div></div></div>`).join("");
-    if(t===2)body.innerHTML=(G.log||[]).slice(-60).map(r=>`<div class="rec"><small>${esc(r[0])}</small>${esc(r[1])}</div>`).join("")||'<p class="note">아직 없어요.</p>'};
-  v.addEventListener("click",e=>{const b=e.target.closest("[data-t]");if(b)draw(+b.dataset.t)});draw(tab)}
+    if(t===2)body.innerHTML=(G.log||[]).slice(-60).map(r=>`<div class="rec"><small>${esc(r[0])}</small>${esc(r[1])}</div>`).join("")||'<p class="note">아직 없어요.</p>';
+    if(t===3){const got=(G.combos||[]).map(x=>x[2]);
+      body.innerHTML=`<p class="note">단서 두 개를 골라 맞붙여 보세요. 서로 이어지면 새 추론이 생겨요. 아무거나 붙이면 헛맞붙임으로 기록돼요.</p>
+      <div class="pair">${[0,1].map(i=>pair[i]?`<div class="slot full">${esc(CLUES[pair[i]].name)}</div>`:'<div class="slot">?</div>').join('<b>＋</b>')}<button class="btn pri" data-mix ${pair.length<2?"disabled":""}>맞붙여 본다</button></div>
+      ${msg}${got.length?`<p class="note">얻은 추론: ${got.map(id=>"<b>"+esc(CLUES[id].name)+"</b>").join(" · ")}</p>`:""}
+      <div class="cards">${G.clues.filter(id=>!got.includes(id)).map(id=>`<button class="card${pair.includes(id)?" sel":""}" data-pc="${id}"><b>${esc(CLUES[id].name)}</b>${esc(CLUES[id].desc)}</button>`).join("")}</div>`}};
+  v.addEventListener("click",e=>{const b=e.target.closest("[data-t]");if(b){msg="";draw(+b.dataset.t);return}
+    const pc=e.target.closest("[data-pc]");if(pc){const id=pc.dataset.pc;pair=pair.includes(id)?pair.filter(x=>x!==id):pair.concat(id).slice(-2);sfx("blip");draw(3);return}
+    if(e.target.closest("[data-mix]")){const m=mixClues(pair[0],pair[1]);msg=m.ok?`<div class="okmsg"><b>${esc(CLUES[m.id].name)}</b> — ${esc(CLUES[m.id].desc)}</div>`:`<div class="bmsg">${esc(m.msg)}</div>`;pair=[];draw(3)}});draw(tab)}
+/* 두 단서를 맞붙인다. COMBOS:[[a,b,새 단서]] (story.js) */
+function mixClues(a,b){G.combos=G.combos||[];G.comboMiss=G.comboMiss||0;const c=COMBOS.find(x=>(x[0]===a&&x[1]===b)||(x[0]===b&&x[1]===a));
+  if(!c){G.comboMiss++;G.wrong++;save();sfx("bad");return {ok:false,msg:"두 단서 사이에 이어지는 것이 없다. 무엇과 무엇이 같은 날, 같은 손, 같은 사람을 가리키는지 생각해 보자."}}
+  if(hasClue(c[2]))return {ok:true,id:c[2]};G.combos.push(c);addClue(c[2]);sfx("stamp");return {ok:true,id:c[2]}}
 $("#bBoard").onclick=()=>{const v=panel(`<span class="eb">사건 보드</span><h2>단서를 잇는 붉은 실</h2><p class="note">모은 단서는 핀으로 꽂히고, 서로 이어지는 것은 붉은 실로 묶여요. 물음표는 아직 못 찾은 단서예요.</p><div class="board" id="bd"><svg></svg></div>`);
   const bd=v.querySelector("#bd"),sv=bd.querySelector("svg");const ids=Object.keys(CLUES).filter(id=>CLUES[id].board);
   const W=bd.clientWidth||700,cols=Math.max(3,Math.floor(W/140)),pos={};
@@ -579,7 +616,12 @@ function askSlot(cfg){if(AUTO)return Promise.resolve();return new Promise(res=>{
 /* ═════════ 기록지 글 ═════════ */
 function notesText(){const L=["[듣기 기록지] 젖은 발자국 — 철산 괴담 수사록"];
   for(const n of G.notes){L.push(`· 제${n.ch}장 ${n.who}: “${n.line}”`);L.push(`  속뜻: ${n.intent0}${n.intent0!==n.intent?` → ${n.intent}`:""} / 근거: ${n.cue} / ${n.res}`);if(n.hold)L.push(`  믿을 만한가: ${n.hold}`);if(n.fix)L.push(`  고친 판정: ${n.fix.from} → ${n.fix.to}${n.fix.why?` (까닭: ${n.fix.why})`:""}`)}
-  for(const [id,l] of Object.entries(G.logic||{}))L.push(`· 추리 로직 「${l.t}」 → ${l.concl} (헛짚은 횟수 ${l.wrong})`+((G.stance||{})[id]?` / 판단의 저울: ${G.stance[id].a}`:""));
+  for(const [id,l] of Object.entries(G.logic||{})){const st=(G.stance||{})[id];
+    L.push(`· 추리 로직 「${l.t}」 → ${l.concl} (헛짚은 횟수 ${l.wrong}${l.sw?`; 물음별 ${l.sw.join("/")}`:""})`+(st?` / 판단의 저울: ${st.first&&st.first!==st.a?`${st.first} → `:""}${st.a}`:""))}
+  if(G.srcmap)L.push(`· 말의 출처 지도: 처음에 맞힌 화살표 ${G.srcmap.ok}/${G.srcmap.n} (화살표별 헛짚음 ${G.srcmap.miss.join("/")})`);
+  if(G.night)L.push(`· 밤의 객사: ${G.night}`);
+  if(G.combos||G.comboMiss)L.push(`· 단서 맞붙이기: 얻은 추론 ${(G.combos||[]).length}개${(G.combos||[]).length?` (${G.combos.map(c=>CLUES[c[2]].name.replace("🧩 ","")).join(", ")})`:""} / 헛맞붙임 ${G.comboMiss||0}번`);
+  if((G.accuse||[]).length)L.push(`· 범인 지목: ${G.accuse.join(" → ")}${(G.misjudge||[]).length?` (오판 ${G.misjudge.length}번)`:""}`);
   for(const a of Object.values(G.asks)){if(!a.qs.length)continue;L.push(`· AI 심문(${a.t})`);for(const x of a.qs){L.push(`  ${NAMES[x.who]}에게 “${x.q}”`+(x.a?` → AI 대답: ${x.a}`:""));if(x.pick!=null&&x.intent>=0)L.push(`    내 판정: ${AI_INTENTS[x.pick]} / AI가 밝힌 속셈: ${AI_INTENTS[x.intent]}`)}}
   return L.join("\n")}
 
@@ -653,7 +695,15 @@ const CLUES={
   c_seed:{name:"초 속의 검은 씨",desc:"객사 초를 갈라 보니 밀랍 속에 검은 풀씨가 섞여 있다. 태우면 단내가 나고 헛것이 보인다는 만다라화 씨.",img:"e_candle",board:1},
   c_cord:{name:"장부 끈",desc:"사랑방의 장부 묶음은 모두 네모진 상인 매듭으로 묶여 있다. 장부는 마 서방만 묶는다.",board:1},
   c_clog:{name:"초 장부",desc:"마 서방이 적는 초 장부. 사랑방에 ‘밤새 타는 긴 초’를 쓴 날은 한 해에 단 하루, 삼월 열하루.",board:1},
-  c_true:{name:"원 장부",desc:"우물 속 기름종이 꾸러미. 연이 어머니의 글씨로 적힌 진짜 장부. 가게 장부와 견주면 삼백 냥이 빈다.",img:"e_ledger",board:1}};
+  c_true:{name:"원 장부",desc:"우물 속 기름종이 꾸러미. 연이 어머니의 글씨로 적힌 진짜 장부. 가게 장부와 견주면 삼백 냥이 빈다.",img:"e_ledger",board:1},
+  c_fake:{name:"🧩 편지는 가짜",desc:"연이는 삼월 열하루에 사라졌는데 편지 종이는 삼월 열엿새 장부다. 사라진 사람이 그 뒤의 종이에 글을 쓸 수는 없다."},
+  c_poison:{name:"🧩 초를 바친 손",desc:"헛것을 보게 하는 씨가 든 초를, 새 현감이 올 때마다 마 서방이 손수 들고 왔다."},
+  c_lamp:{name:"🧩 먹 냄새 나는 등불",desc:"원혼이 마주친 등불 든 사람은 먹 냄새가 났다. 객주에서 손끝에 먹물이 밴 사람은 장부 맡은 마 서방이다."},
+  c_hand:{name:"🧩 매듭의 주인",desc:"은자 주머니의 상인 매듭과 장부 끈의 매듭이 같다. 주머니를 묶은 손은 장부를 묶는 손이다."},
+  c_alibi:{name:"🧩 그림자 없는 불빛",desc:"돌쇠가 본 밤새 켜진 불빛은 한 해 단 하루 켠 긴 초였다. 방은 비어 있었을 수 있다. 마 서방의 알리바이가 깨진다."},
+  c_motive:{name:"🧩 연이가 알아챈 것",desc:"셈에 밝던 연이는 원 장부와 가게 장부를 견주어 빈 삼백 냥을 알아챘다. 그래서 누군가는 연이의 입을 막아야 했다."}};
+/* 맞붙이기: [단서, 단서, 새 단서] */
+const COMBOS=[["c_date","c_back","c_fake"],["c_seed","c_supply","c_poison"],["c_ghost","c_ink","c_lamp"],["c_knot","c_cord","c_hand"],["c_dol","c_clog","c_alibi"],["c_abacus","c_true","c_motive"]];
 const LINKS=[["c_diary","c_candle"],["c_candle","c_seed"],["c_seed","c_supply"],["c_tong","c_seed"],["c_supply","c_clog"],["c_ghost","c_true"],["c_ghost","c_slip"],
   ["c_date","c_back"],["c_letter","c_back"],["c_pouch","c_knot"],["c_knot","c_cord"],["c_cord","c_clog"],["c_dol","c_clog"],["c_rumor","c_dol"],["c_abacus","c_true"],["c_slip","c_tea"],["c_tea","c_true"],["c_ghost","c_ink"],["c_ink","c_cord"],["c_rich","c_true"],["c_rumor","c_rich"]];
 
@@ -778,7 +828,11 @@ async function ch1(){bg("cover");setDrone(true);
     {q:"그 초 곁에 오래 있으면 어떻게 되나?",opts:["잠이 깬다","머리가 핑 돌고 눈앞이 흔들린다","배가 고파진다"],ans:1,hint:"통인 아이는 왜 늘 문밖에 있었을까?"},
     {q:"그 초는 누가 들여오나?",opts:["이방","주모","객주집 마 서방"],ans:2,hint:"통인 아이에게 들은 말이다."}],
     concl:"현감들을 쓰러뜨린 것은 원혼이 아니라 새 초일 수 있다. 그 초를 들여오는 마 서방을 살펴야 한다.",
-        stance:{q:"‘새 초가 현감들을 쓰러뜨렸다’ — 이 추리를 얼마나 믿을 수 있나?",ans:1,say:["확정하기엔 이르다. 초를 갈라 보지도 않았고, 통인 아이의 말도 느낌일 뿐이다.","그래. 정황은 맞아 들어가지만 초 속을 확인하지 않았다. 의심을 품고 확인할 거리를 찾자.","근거가 아주 없지는 않다. 일기, 통인 아이의 말, 초를 들여온 사람까지 맞아 들어간다. 의심해 볼 만하다."]}});
+        stance:{q:"‘새 초가 현감들을 쓰러뜨렸다’ — 이 추리를 얼마나 믿을 수 있나?",ans:1,bad:{0:async()=>{
+      await N("[만약 지금 확정한다면…] 현감은 그 자리에서 마 서방을 묶으라 명했다.");
+      await talk([["ma","초는 장터에서 사 왔을 뿐입니다요! 무슨 증거로 소인을…","sweat"],["ibang","사또, 초를 갈라 보지도 않으셨사온데… 이대로는 감영에 아뢸 말이 없사옵니다."]]);
+      await N("증거 없이 묶인 마 서방은 사흘 만에 풀려났다. 그날 밤, 객주 사랑방 굴뚝에서 무언가 태우는 검은 연기가 오래도록 피어올랐다.");
+      await ME("…확인하지 않은 확신은 범인에게 증거를 치울 시간을 줄 뿐이다. 아직 일어나지 않은 일이다. 다시 저울질하자.")}},say:["확정하기엔 이르다. 초를 갈라 보지도 않았고, 통인 아이의 말도 느낌일 뿐이다.","그래. 정황은 맞아 들어가지만 초 속을 확인하지 않았다. 의심을 품고 확인할 거리를 찾자.","근거가 아주 없지는 않다. 일기, 통인 아이의 말, 초를 들여온 사람까지 맞아 들어간다. 의심해 볼 만하다."]}});
   await write("w1","제1장 기록","지금 누구의 말을 믿는가? 왜 그렇게 생각하는가? (들은 말과 본 말을 가려 써 보자)","예: 원혼의 말은 ○○ 때문에 아직 다 믿을 수 없다. 주모의 말은 들은 말이라…");
   await oldTale("새 부사마다 첫날 밤 홍련의 원혼을 보고 놀라 죽었다. 정동호만이 원혼의 호소를 끝까지 들었다.","이 사건에서도 원혼이 누명을 호소한다. 그런데 현감들이 쓰러진 까닭은 정말 원혼 때문이었을까?")}
 
@@ -853,6 +907,7 @@ async function ch2(){bg("bg_gaekju");
   await ME("마당, 안채, 연이의 방. 사람들의 말을 듣고, 방을 뒤지고, 얼굴을 살피자.");
   await roam(R2);
   ["c_letter","c_slip","c_dol"].forEach(id=>addClue(id,1));
+  await srcMap();
   await ME("돌쇠는 ‘불빛’을 보았을 뿐, 마 서방을 본 것이 아니다. 본 것과 짐작한 것이 섞였다.");
   const w=await sheet(`<span class="eb">논증 해부 · 오씨의 주장</span><h2>“연이는 도둑이다”</h2><p class="note">오씨의 주장을 세 칸으로 나누었어요. 가장 약한 칸은 어디일까요?</p>
     <div class="opts"><button data-go="0">주장 · 연이가 객주 돈을 훔쳤다</button><button data-go="1">근거 · 연이의 함에서 은자 주머니가 나왔다</button><button data-go="2">숨은 전제 · 함에 든 것은 연이가 넣은 것이다</button></div>`);
@@ -870,10 +925,10 @@ async function ch2(){bg("bg_gaekju");
 /* ═════════ 제3장 불빛에 비춘 편지 (2차시) ═════════ */
 const R3={id:"r3",title:"제3장 · 감정과 탐문",start:"lab",finish:"감정을 마치기",
   goals:[{t:"도망 편지를 불빛에 비춰 본다",ok:()=>hasClue("c_back")},{t:"은자 주머니의 매듭을 견주어 본다",ok:()=>hasClue("c_knot")},
-    {t:"객사의 새 초를 갈라 본다",ok:()=>hasClue("c_seed")},{t:"연이의 동생 복이에게 이야기를 듣는다",ok:()=>hasClue("c_tea")}],
+    {t:"객사의 새 초를 갈라 본다",ok:()=>hasClue("c_seed")},{t:"연이의 동생 복이에게 이야기를 듣는다",ok:()=>hasClue("c_tea")},{t:"수첩의 🧩 맞붙이기로 단서 둘을 이어 새 추론을 얻는다",ok:()=>(G.combos||[]).length>0}],
   places:{
     lab:{name:"관아 기록고 (감정)",bg:"bg_archive",desc:"증거물을 서안에 펼쳐 놓았다. 마 서방이 내놓은 편지와, 관아에 맡겨 둔 은자 주머니.",spots:[
-      {id:"letter",key:1,x:30,y:63,w:28,h:15,name:"도망 편지",run:async()=>{await lightLetter();addClue("c_back");
+      {id:"letter",key:1,x:30,y:63,w:28,h:15,name:"도망 편지",run:async()=>{await lightLetter();addClue("c_back");if(AUTO)mixClues("c_date","c_back");
         await quiz("편지 뒷면에 비친 ‘삼월 열엿새’. 무엇을 뜻할까?",["연이가 사라진 날(삼월 열하루)보다 닷새 뒤에 쓰인 장부 종이다. 그러니 이 편지는 연이가 사라진 뒤에 누군가 쓴 것이다","연이가 미리 날짜를 적어 두었다","장부 날짜는 아무 뜻이 없다"],0,"관아의 실종 기록과 견주어 보자. 연이는 언제 사라졌지?",{tag:"감정"});
         await ME("연이가 사라지고 닷새 뒤에 쓰인 장부 종이에, 연이가 ‘떠납니다’라고 쓸 수는 없다. 편지는 가짜다! 그리고 이 종이는 가게 장부에서 찢은 것이다.")}},
       {id:"pouch",key:1,x:25,y:58,w:14,h:9,name:"은자 주머니",run:async()=>{if(!seen("r3","bok:knot")){await ME("네모진 상인 매듭으로 꽁꽁 묶여 있다. 그런데… 무엇과 견주어야 이 매듭의 주인을 알 수 있을까? 연이를 잘 아는 사람을 찾아가 보자.");return false}await knotExam()}}]},
@@ -901,11 +956,13 @@ const R3={id:"r3",title:"제3장 · 감정과 탐문",start:"lab",finish:"감정
 async function ch3(){bg("bg_gaeksa");dark(true);setDrone(true);
   await N("그날 밤, 현감은 새 초 대신 관아의 묵은 초를 켜고 객사에 앉았다.");
   await footsteps(4);sfx("drip");
+  await nightChoice();
   show("ghost");
   await talk([["ghost","…사또."],["ghost","편지를… 불빛에 비춰 보소서."],["ghost","그리고… 저는 매듭을 늘 나비 모양으로 맸사옵니다. 어머니께 배운 대로요."]]);
   hide();await N("말을 마친 소녀는 또 물안개처럼 사라졌다. 이번에는 놀랍지 않았다. 아니, 조금은 놀라웠다.");
   dark(false);setDrone(false);
   await ME("편지, 매듭, 그리고 객사의 초. 하나씩 감정해 보자. 연이를 잘 아는 사람도 찾아야 한다.");
+  await ME("단서가 늘면 수첩을 펴서 [🧩 맞붙이기]를 해 보자. 날짜와 날짜, 매듭과 매듭처럼 같은 것을 가리키는 두 단서를 붙이면 새 추론이 나온다.");
   await roam(R3);
   await settle("h_ghost","원혼의 말(등불 든 사람, 먹 냄새)은 이제 어떻게 판단할까?",["아직 다 확인되진 않았지만, 편지·매듭·초가 모두 원혼의 말과 맞아 들어간다","원혼의 말은 헛것이었다","원혼이 범인을 정확히 알려 주었다"],0,"원혼의 말 가운데 확인된 것이 늘었다. 그래도 범인 얼굴은 원혼도 못 보았다.");
   await logic({id:"l3",title:"편지와 주머니는 누가 꾸몄나",steps:[
@@ -915,7 +972,11 @@ async function ch3(){bg("bg_gaeksa");dark(true);setDrone(true);
     {q:"은자 주머니의 매듭은?",opts:["연이가 늘 매던 나비 매듭","장사꾼이 쓰는 네모진 상인 매듭"],ans:1,hint:"복이의 주머니와 견주어 본 매듭."},
     {q:"장부 종이와 상인 매듭을 함께 다루는 사람은?",opts:["오씨","장부를 맡은 마 서방","돌쇠"],ans:1,hint:"객주에서 장부를 맡은 사람은 누구였지?"}],
     concl:"편지와 주머니는 연이가 사라진 뒤 장부를 다루는 손이 꾸민 것이다. 가장 의심스러운 사람은 마 서방이다.",
-        stance:{q:"‘마 서방이 편지와 주머니를 꾸몄다’ — 이 추리를 얼마나 믿을 수 있나?",ans:1,say:["종이와 매듭은 마 서방을 가리킨다. 그러나 마 서방이 직접 했다는 증거는 아직 없다. 단정은 조금 더 확인한 뒤에 하자.","그래. 종이와 매듭이 모두 마 서방을 가리키지만, 그가 했다는 확인은 아직이다. 마지막 증거를 찾자.","증거가 이만큼 모였는데 미뤄 둘까? 종이와 매듭이 모두 한 사람을 가리킨다. 적어도 의심할 근거는 넉넉하다."]}});
+        stance:{q:"‘마 서방이 편지와 주머니를 꾸몄다’ — 이 추리를 얼마나 믿을 수 있나?",ans:1,bad:{0:async()=>{
+      await N("[만약 지금 확정한다면…] 현감은 마 서방을 동헌 마당에 꿇렸다.");
+      await talk([["ma","종이야 아무나 집어 쓰고, 상인 매듭이야 객주 사람이면 누구나 맵니다요. 마님도 매시고, 돌쇠도 매지요!","sweat"],["me","……"]]);
+      await N("증거는 ‘객주 사람 누군가’까지만 가리켰다. 그 밤 마 서방이 어디 있었는지도, 왜 그랬는지도 밝히지 못했다. 고을 사람들은 이번엔 오씨를 수군거리기 시작했다.");
+      await ME("마지막 고리가 빠져 있다. 그 밤 그가 방에 없었다는 것, 그리고 까닭. 아직 일어나지 않은 일이다. 다시 저울질하자.")}},say:["종이와 매듭은 마 서방을 가리킨다. 그러나 마 서방이 직접 했다는 증거는 아직 없다. 단정은 조금 더 확인한 뒤에 하자.","그래. 종이와 매듭이 모두 마 서방을 가리키지만, 그가 했다는 확인은 아직이다. 마지막 증거를 찾자.","증거가 이만큼 모였는데 미뤄 둘까? 종이와 매듭이 모두 한 사람을 가리킨다. 적어도 의심할 근거는 넉넉하다."]}});
   await write("w3","제3장 기록","지금 가장 의심스러운 사람은 누구인가? 처음에 의심한 사람과 같은가, 다른가? 그 까닭은?","예: 처음엔 ○○를 의심했지만, ○○ 단서 때문에…");
   await oldTale("부사는 허씨가 내놓은 ‘낙태한 것’을 보고 한 번 속았다. 원혼의 말대로 배를 갈라 보니 쥐똥이 가득했다.","이 사건의 편지와 주머니도 ‘너무 잘 준비된 증거’였다. 겉만 보지 않고 비춰 보고 견주어 보니 꾸민 것이 드러났다.")}
 async function knotExam(){const k=await sheet(`<span class="eb">감정 · 매듭 견주기</span><h2>은자 주머니의 매듭은 누구의 매듭인가?</h2>
@@ -983,6 +1044,7 @@ async function ch4(){bg("bg_gaekju");
   addClue("c_true");
   await ME("연이 어머니의 글씨로 적힌 진짜 장부다. 가게 장부와 견주어 보니… 삼백 냥이 빈다. 연이는 이걸 아버지께 보이려던 거다!");
   await settle("h_well","마 서방의 ‘우물가’라는 말은 이제 어떻게 판단할까?",["알아서는 안 될 것을 아는 사람의 말이었다. 연이는 정말 우물에 있었다","그냥 말이 헛나온 것이다","오씨가 시킨 말이다"],0,"아무도 몰랐던 우물을 마 서방만 말했다. 범인만 아는 것이 말에 새어 나왔다.");
+  await accuse();
   /* 추리 쇼 */
   bg("bg_dongheon");dark(false);setDrone(false);
   await N("이튿날 동헌. 송 객주, 오씨, 마 서방, 돌쇠, 복이가 모두 불려 왔다. 사람들이 구름처럼 몰려들었다.");
@@ -1005,19 +1067,80 @@ async function ch4(){bg("bg_gaekju");
   await submitSheet("3차시 중간")}
 /* 추리 쇼: 물음마다 단서를 들이민다. 틀리면 마 서방이 비웃는다 */
 async function deduce(){const S=[
-  {q:"연이가 정인과 달아났다는 증거, 이 편지. 이것이 가짜라는 증거는?",a:"c_back",ok:[["me","편지 뒷면에 장부 칸과 ‘삼월 열엿새’가 비친다. 연이가 사라지고 닷새 뒤에 맨 장부 종이에, 연이가 편지를 쓸 수는 없다!"],["ma","…그, 그건 아씨가 장부 종이를 미리…","sweat"],["me","닷새 뒤의 장부를 미리? 그리고 그 장부를 매는 사람은 누구지?"]],
+  {q:"연이가 정인과 달아났다는 증거, 이 편지. 이것이 가짜라는 증거는?",a:"c_back",alt:["c_fake"],ok:[["me","편지 뒷면에 장부 칸과 ‘삼월 열엿새’가 비친다. 연이가 사라지고 닷새 뒤에 맨 장부 종이에, 연이가 편지를 쓸 수는 없다!"],["ma","…그, 그건 아씨가 장부 종이를 미리…","sweat"],["me","닷새 뒤의 장부를 미리? 그리고 그 장부를 매는 사람은 누구지?"]],
     no:[["ma","허허, 그게 편지와 무슨 상관입니까?"]]},
-  {q:"연이의 함에서 나온 은자 주머니. 연이가 넣지 않았다는 증거는?",a:"c_knot",ok:[["me","연이는 늘 나비 매듭만 맸다. 그런데 이 주머니는 네모진 상인 매듭이다."],["ma","상인 매듭이야 객주 사람이면 누구나…","sweat"]],no:[["ma","그건 아씨가 넣지 않았다는 증거가 못 되지요."]]},
-  {q:"그 상인 매듭을 매는 사람이 누구인지 보여 주는 단서는?",a:"c_cord",ok:[["me","사랑방 장부 묶음은 모두 같은 상인 매듭이다. 장부는 오직 마 서방, 자네만 묶지."]],no:[["ma","그걸로 누가 맸는지 어찌 압니까?"]]},
-  {q:"마 서방은 그 밤 사랑방에 밤새 있었다고 했다. 돌쇠가 불빛을 봤다고. 그 알리바이를 깨는 단서는?",a:"c_clog",ok:[["me","돌쇠가 본 것은 ‘불빛’이지 자네가 아니다. 그리고 자네 초 장부를 보니, 한 해에 단 하루 사랑방에 밤새 타는 긴 초를 켰더군. 바로 삼월 열하루!"],["dol","…맞습니다요. 소인은 불빛만 봤습니다요!","fear"],["ma","…!","sweat"]],
+  {q:"연이의 함에서 나온 은자 주머니. 연이가 넣지 않았다는 증거는?",a:"c_knot",alt:["c_hand"],ok:[["me","연이는 늘 나비 매듭만 맸다. 그런데 이 주머니는 네모진 상인 매듭이다."],["ma","상인 매듭이야 객주 사람이면 누구나…","sweat"]],no:[["ma","그건 아씨가 넣지 않았다는 증거가 못 되지요."]]},
+  {q:"그 상인 매듭을 매는 사람이 누구인지 보여 주는 단서는?",a:"c_cord",alt:["c_hand"],ok:[["me","사랑방 장부 묶음은 모두 같은 상인 매듭이다. 장부는 오직 마 서방, 자네만 묶지."]],no:[["ma","그걸로 누가 맸는지 어찌 압니까?"]]},
+  {q:"마 서방은 그 밤 사랑방에 밤새 있었다고 했다. 돌쇠가 불빛을 봤다고. 그 알리바이를 깨는 단서는?",a:"c_clog",alt:["c_alibi"],ok:[["me","돌쇠가 본 것은 ‘불빛’이지 자네가 아니다. 그리고 자네 초 장부를 보니, 한 해에 단 하루 사랑방에 밤새 타는 긴 초를 켰더군. 바로 삼월 열하루!"],["dol","…맞습니다요. 소인은 불빛만 봤습니다요!","fear"],["ma","…!","sweat"]],
     no:[["ma","돌쇠가 봤다지 않습니까. 허허."]]},
   {q:"마 서방은 연이가 어디 있는지 몰랐다고 한다. 그런데 그가 그것을 알고 있었다는 단서는?",a:"c_slip",ok:[["me","삼 년 동안 모두 ‘달아났다’고만 했다. 그런데 자네는 내게 이렇게 말했지. ‘그 밤 우물가는 달도 없어 캄캄했을 텐데.’"],["me","우물에 연이가 있다는 것은, 연이를 거기 둔 사람만 알 수 있다!"],["ma","그, 그건 말이 헛나와서…","sweat"],["bok","…그 다음 날, 마 서방님 버선이 젖고 흙투성이였어요.","cry"]],
     no:[["ma","제가 무얼 안다는 겁니까?"]]},
-  {q:"그래도 마 서방이 왜 연이를 해치려 했는가? 까닭을 보여 주는 단서는?",a:"c_true",ok:[["me","우물에서 건진 기름종이 꾸러미. 연이 어머니가 쓰던 원 장부다. 가게 장부와 견주면 삼백 냥이 빈다. 연이는 셈에 밝았고, 그걸 알아챘다."],["me","그래서 자네는 연이를 도둑으로 만들어야 했다. 원 장부를 쥔 아이가 도둑이면, 아무도 그 아이 말을 듣지 않을 테니까!"]],
+  {q:"그래도 마 서방이 왜 연이를 해치려 했는가? 까닭을 보여 주는 단서는?",a:"c_true",alt:["c_motive"],ok:[["me","우물에서 건진 기름종이 꾸러미. 연이 어머니가 쓰던 원 장부다. 가게 장부와 견주면 삼백 냥이 빈다. 연이는 셈에 밝았고, 그걸 알아챘다."],["me","그래서 자네는 연이를 도둑으로 만들어야 했다. 원 장부를 쥔 아이가 도둑이면, 아무도 그 아이 말을 듣지 않을 테니까!"]],
     no:[["ma","까닭도 없이 제가 왜요?"]]},
-  {q:"마지막이다. 새 현감들을 객사에서 쓰러뜨린 것은 무엇이었나?",a:"c_seed",ok:[["me","객사 초 속의 만다라화 씨. 그 초는 객주가 바치고, 자네가 손수 들고 왔다. 새 현감이 객주 장부를 들여다볼까 봐, 첫날 밤에 쓰러뜨린 거다!"],["ma","…….","sweat"]],
+  {q:"마지막이다. 새 현감들을 객사에서 쓰러뜨린 것은 무엇이었나?",a:"c_seed",alt:["c_poison"],ok:[["me","객사 초 속의 만다라화 씨. 그 초는 객주가 바치고, 자네가 손수 들고 왔다. 새 현감이 객주 장부를 들여다볼까 봐, 첫날 밤에 쓰러뜨린 거다!"],["ma","…….","sweat"]],
     no:[["ma","원혼 짓이라 하지 않았습니까, 다들."]]}];
-  for(const s of S){for(;;){const c=await pickClue("추리 쇼",s.q,s.a);if(c===s.a){await objection("바로 이것이다!");await talk(s.ok);break}sfx("bad");G.wrong++;await talk(s.no);await ME("다른 단서를 골라 보자. 수첩의 사건 보드를 보면 실로 이어진 단서가 있다.")}}}
+  for(const s of S){for(;;){const c=await pickClue("추리 쇼",s.q,s.a);if(c===s.a||(s.alt||[]).includes(c)){await objection("바로 이것이다!");await talk(s.ok);break}sfx("bad");G.wrong++;await talk(s.no);await ME("다른 단서를 골라 보자. 수첩의 사건 보드를 보면 실로 이어진 단서가 있다.")}}}
+
+/* 범인 지목: 틀리면 오판 엔딩을 보고, 어디서 헛짚었는지 되짚은 뒤 다시 지목한다 */
+const WRONG_MAN={
+  oh:{n:"오씨",scene:["현감은 오씨에게 의붓딸에게 누명을 씌운 죄를 물었다. 오씨는 끝까지 ‘나는 함만 열었을 뿐’이라 울부짖었다.","마 서방은 허허 웃으며 머리를 조아렸다. 그달에도 객사에는 새 초가 들어왔다."],
+    clear:["c_knot","c_cord","c_hand","c_clog","c_alibi"],why:"주머니는 장부를 묶는 상인 매듭으로 묶였고, 장부는 마 서방만 묶는다. 오씨는 마 서방의 귀띔을 듣고 함을 연 사람이지, 주머니를 넣은 사람이 아니다."},
+  dol:{n:"돌쇠",scene:["현감은 돌쇠에게 곤장을 치고 고을 밖으로 내쫓았다. 돌쇠는 ‘소인은 불빛만 봤습니다요!’ 하고 울며 떠났다.","소문을 퍼뜨린 잘못은 있었다. 그러나 그 밤 연이를 해친 것은 돌쇠가 아니었다."],
+    clear:["c_rumor","c_dol","c_alibi","c_hand","c_cord"],why:"돌쇠는 그 밤 노름판에 있다가 새벽에 돌아왔고, 사랑방 불빛만 보았다. 소문을 낸 잘못과 연이를 해친 일은 다르다."},
+  song:{n:"송 객주",scene:["현감은 송 객주가 제 돈을 빼돌리고 딸에게 덮어씌웠다고 판결했다. 송 객주는 아무 말도 못 하고 고개를 떨구었다.","객주 장부는 그날부터 마 서방 혼자 맡게 되었다."],
+    clear:["c_true","c_motive","c_cord","c_hand","c_clog"],why:"빈 삼백 냥은 장부를 맡은 손에서 빠져나갔다. 장부를 묶고 초 장부를 쓰는 사람은 송 객주가 아니라 마 서방이다."}};
+async function accuse(){G.accuse=G.accuse||[];
+  await ME("추리 쇼를 열기 전에 마음을 정해야 한다. 내가 지목한 사람이 벌을 받는다. 들은 말이 아니라, 확인한 증거로 고르자.");
+  for(;;){const c=await choose("이 사건의 범인은 누구인가?",["마 서방","오씨","돌쇠","송 객주"],{tag:"범인 지목",ans:0});const who=["ma","oh","dol","song"][c];
+    G.accuse.push(NAMES[who]);save();if(who==="ma"){sfx("stamp");break}
+    await misjudge(who)}}
+async function misjudge(who){const W=WRONG_MAN[who];sfx("bad");G.wrong++;
+  bg("bg_dongheon");dark(false);for(const t of W.scene)await N(t);
+  bg("bg_gaeksa");dark(true);setDrone(true);await N("그날 밤, 현감은 객사에 홀로 앉았다. 관아의 묵은 초가 조용히 타고 있었다.");
+  await footsteps(5);sfx("drip");await jump("p_yeoni_ghost");
+  show("ghost");await talk([["ghost","…사또. 그 사람이… 아니옵니다."],["ghost","저는 아직… 물속이 차갑사옵니다."]]);hide();
+  await sheet(`<div style="text-align:center;padding:14px 6px"><span class="eb">오판</span><h2 style="font-size:26px">그릇된 판결</h2><p class="note">${esc(W.n)}을(를) 범인으로 지목했어요. 그 밤 객사 마루에는 다시 젖은 발자국이 찍혔어요.<br>어디서 헛짚었는지 되짚어 보고, 그 자리로 돌아가요.</p><div class="row" style="justify-content:center"><button class="btn pri" data-go="1">되짚기 ▶</button></div></div>`,"logic");
+  for(;;){const c=await pickClue("되짚기",W.n+"이(가) 범인이 아님을 보여 주는 단서는?",W.clear[0]);if(c&&W.clear.includes(c))break;sfx("bad");await ME("그 단서로는 "+W.n+"의 결백이 드러나지 않는다. 그 사람이 그 밤 무엇을 했고, 무엇을 할 수 없었는지 떠올려 보자.")}
+  sfx("ok");await ME(W.why);
+  (G.misjudge=G.misjudge||[]).push(W.n);save();
+  await N("…현감은 퍼뜩 정신을 차렸다. 아직 아무도 지목하지 않았다. 우물가에 사람들이 모여 현감의 말을 기다리고 있었다.");
+  bg("bg_well");dark(false);setDrone(false)}
+
+/* 말의 출처 지도: 화살표마다 본 말·들은 말·짐작을 붙인다 */
+async function srcMap(){const KIND=["본 말","들은 말","짐작"];
+  const NODE={dol:["돌쇠",9,92],mkt:["장터 사람들",10,40],ibang:["이방",46,6],me:["현감",52,56],halmi:["주모",91,26],oh:["오씨",91,92],ghost:["원혼",20,97]};
+  const LPOS=[[14,66],[25,22],[54,28],[80,47],[77,74],[42,80]];
+  const E=[["dol","mkt","“아씨가 돈 훔쳐 정인과 달아났다”",2,"돌쇠는 그 밤 노름판에 있었고 사랑방 불빛만 보았다."],["mkt","ibang","“연이가 달아났다더라”",1,"장터 사람들은 돌쇠의 말을 들었을 뿐이다."],
+    ["ibang","me","“대강 듣기로는 달아났다 하옵니다”",1,"이방은 들은 말임을 스스로 밝혔다."],["halmi","me","“돌쇠는 그 밤 노름판에 있었다”",0,"주모는 새벽에 돌쇠가 나가는 것을 제 눈으로 보았다."],
+    ["oh","me","“연이 함에서 은자 주머니가 나왔다”",0,"주머니가 나온 것은 오씨가 직접 보았다. 다만 누가 넣었는지는 보지 못했다."],["ghost","me","“등불 든 사람에게서 먹 냄새가 났다”",0,"원혼이 그 밤 직접 겪은 일이다. 다만 아직 다른 증거로 확인하지 못했다."]];
+  const pick=E.map(()=>-1),miss=E.map(()=>0);
+  if(AUTO){G.srcmap={ok:E.length,n:E.length,miss};save();return}
+  await new Promise(res=>{const v=veil("","logic"),S=v.querySelector(".sheet");let msg="";
+    const P=k=>NODE[k];
+    const paint=bad=>{S.innerHTML=`<span class="eb">말의 출처 지도</span><h2>이 소문은 어디서 왔나</h2><p class="note">화살표 위의 말을 누를 때마다 <b>본 말 → 들은 말 → 짐작</b>으로 바뀌어요. 실선은 본 말, 점선은 들은 말, 붉은 점선은 짐작이에요.</p>
+      <div class="smap"><svg viewBox="0 0 100 100" preserveAspectRatio="none">${E.map((e,i)=>{const a=P(e[0]),b=P(e[1]);return `<line x1="${a[1]}" y1="${a[2]}" x2="${b[1]}" y2="${b[2]}" class="k${pick[i]}"/>`}).join("")}</svg>
+      ${Object.entries(NODE).map(([k,n])=>`<div class="snode${k==="me"?" me":""}" style="left:${n[1]}%;top:${n[2]}%">${esc(n[0])}</div>`).join("")}
+      ${E.map((e,i)=>{const m=LPOS[i];return `<button class="sedge k${pick[i]}${bad&&bad.includes(i)?" shake":""}" data-e="${i}" style="left:${m[0]}%;top:${m[1]}%"><small>${esc(P(e[0])[0])} → ${esc(P(e[1])[0])}</small>${esc(e[2])}<b>${pick[i]<0?"？ 눌러서 고르기":KIND[pick[i]]}</b></button>`}).join("")}</div>
+      ${msg}<div class="row"><button class="btn pri" data-chk ${pick.includes(-1)?"disabled":""}>확인하기</button></div>`};
+    paint();
+    v.addEventListener("click",e=>{const b=e.target.closest("[data-e]");if(b){const i=+b.dataset.e;pick[i]=(pick[i]+1)%3;sfx("blip");msg="";paint();return}
+      if(e.target.closest("[data-chk]")){const bad=E.map((x,i)=>pick[i]===x[3]?-1:i).filter(i=>i>=0);
+        if(bad.length){bad.forEach(i=>miss[i]++);G.wrong++;sfx("bad");msg=`<div class="bmsg">${bad.length}개가 맞지 않아요. 흔들리는 말을 다시 생각해 봐요. 그 사람은 그 일을 제 눈으로 보았나?</div>`;paint(bad);return}
+        sfx("stamp");G.srcmap={ok:miss.filter(x=>!x).length,n:E.length,miss};save();
+        S.innerHTML=`<span class="eb">말의 출처 지도</span><h2>소문의 뿌리는 짐작이었다</h2>${E.map(x=>`<div class="rec"><small>${esc(P(x[0])[0])} → ${esc(P(x[1])[0])} · <b>${KIND[x[3]]}</b></small>${esc(x[2])}<br>${esc(x[4])}</div>`).join("")}<p class="note">고을에 퍼진 ‘달아났다’는 말은 짐작에서 시작해 들은 말로 옮겨졌어요. 본 말도 ‘무엇을 보았는지’까지만 믿을 수 있어요.</p><div class="row"><button class="btn pri" data-end>수첩에 적는다 ▶</button></div>`;
+        S.querySelector("[data-end]").onclick=()=>{v.remove();res()}}})});
+  await ME("가장 크게 퍼진 말이 가장 확인이 덜 된 말이었다.")}
+
+/* 밤의 객사: 발소리가 멈춘 순간, 몇 초 안에 무엇을 할지 고른다 */
+async function nightChoice(){await N("찰박… 찰박… 젖은 발소리가 문 앞에서 뚝 멈추었다. 문틈으로 물이 스며 들어온다.");
+  const c=await timedChoose("어떻게 할까? (서둘러!)",["숨을 고르고 먼저 말을 건다 — “무엇을 알리려 왔느냐”","촛불을 끄고 병풍 뒤에 숨는다","문고리를 붙잡고 문을 걸어 잠근다"],6,{tag:"밤의 객사",ans:0});
+  G.night=["말을 걸었다","촛불을 끄고 숨었다","문을 잠갔다","얼어붙었다"][c<0?3:c];save();
+  if(c===0){await ME("(무섭다. 하지만 놀라 쓰러지면 아무것도 듣지 못한다.) …무엇을 알리려 왔느냐.");sfx("drip");show("ghost");
+    await talk([["ghost","…먼저 물어 주신 분은 사또가 처음이옵니다."],["ghost","그 밤 사랑채 창은 밤새 환했사오나… 창에 비친 그림자는 한 번도 없었사옵니다."]]);
+    G.log=G.log||[];G.log.push(["제3장 · 밤의 객사","원혼: 사랑채 창은 밤새 환했으나 그림자는 없었다."]);save();hide();return}
+  if(c===1){sfx("candle");dark(true);await N("후— 촛불이 꺼지자 방 안이 칠흑이 되었다. 병풍 너머로 물방울 떨어지는 소리만 가까워진다.");await jump("p_yeoni_ghost");await N("…숨지 마소서, 사또. 귓가에서 젖은 목소리가 속삭였다.");return}
+  if(c===2){sfx("bad");await N("덜컹! 덜컹! 문고리가 손안에서 미친 듯이 떨렸다. 그러다 뚝, 멈추었다.");await N("돌아보니—소녀는 이미 방 안, 촛불 곁에 서 있었다.");await jump("p_yeoni_ghost");return}
+  await N("몸이 돌처럼 굳어 버렸다. 문이 스르르 저절로 열렸다.");await jump("p_yeoni_ghost")}
 
 /* ═════════ 제5장 그 밤 다시 듣기 (4차시) ═════════ */
 async function ch5(){bg("bg_gaekju");dark(true);setDrone(true);
@@ -1078,7 +1201,7 @@ async function chainOfWords(){const A=[["마 서방 → 오씨","“아씨 방�
   for(const a of A)await quiz(`${a[0]} : ${a[1]}`,a[2],a[3],"그 사람은 무엇을 직접 보았고, 무엇을 들었지?",{tag:"말이 옮겨 간 길"});
   await ME("이 길에서 확인한 사람은 아무도 없었다. 단 한 사람만, 한 번만 물었더라도 누명은 거기서 멈췄을 것이다. 그리고 들은 말임을 밝힌 사람은 이방 한 사람뿐이었다.")}
 
-async function ending(){bg("cover");hide();await sheet(`<div style="text-align:center;padding:20px 6px"><span class="eb">수사 끝</span><h2 style="font-size:28px">젖은 발자국</h2><p class="note">모은 단서 ${G.clues.length}개 · 듣기 판정 ${G.notes.length}개 · 되짚은 횟수 ${G.wrong}</p>${Object.entries(G.logic||{}).map(([id,l])=>`<p class="note" style="text-align:left">🕯 ${esc(l.t)} — ${esc(l.concl)}${(G.stance||{})[id]?`<br>　판단의 저울: <b>${esc(G.stance[id].a)}</b>`:""}</p>`).join("")}<div class="row" style="justify-content:center"><button class="btn pri" data-go="1">표지로</button></div></div>`);G.ch=0;save();if(AUTO){window.AUTO_DONE=1;return}title()}
+async function ending(){bg("cover");hide();await sheet(`<div style="text-align:center;padding:20px 6px"><span class="eb">수사 끝</span><h2 style="font-size:28px">젖은 발자국</h2><p class="note">모은 단서 ${G.clues.length}개 · 듣기 판정 ${G.notes.length}개 · 되짚은 횟수 ${G.wrong}</p>${Object.entries(G.logic||{}).map(([id,l])=>`<p class="note" style="text-align:left">🕯 ${esc(l.t)} — ${esc(l.concl)}${(G.stance||{})[id]?`<br>　판단의 저울: <b>${G.stance[id].first&&G.stance[id].first!==G.stance[id].a?esc(G.stance[id].first)+" → ":""}${esc(G.stance[id].a)}</b>`:""}</p>`).join("")}${(G.misjudge||[]).length?`<p class="note" style="text-align:left">⚖ 오판 ${G.misjudge.length}번: ${esc(G.misjudge.join(", "))}을(를) 먼저 지목했다가 되짚었다.</p>`:""}<div class="row" style="justify-content:center"><button class="btn pri" data-go="1">표지로</button></div></div>`);G.ch=0;save();if(AUTO){window.AUTO_DONE=1;return}title()}
 
 /* ═════════ 시작 ═════════ */
 load();hud();title();
