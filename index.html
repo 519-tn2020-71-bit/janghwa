@@ -20,17 +20,20 @@ button{font:inherit;color:inherit}
 #bg2{opacity:0}
 #stage.dark #bg,#stage.dark #bg2{filter:brightness(.35) saturate(.6) hue-rotate(170deg)}
 #vig{position:absolute;inset:0;pointer-events:none;background:radial-gradient(ellipse at center,transparent 45%,rgba(0,0,0,.75))}
-#port{position:absolute;right:3%;bottom:0;height:88%;max-width:46%;object-fit:contain;object-position:bottom;opacity:0;transition:opacity .35s,transform .35s;transform:translateY(8px);
-  -webkit-mask-image:radial-gradient(ellipse 60% 62% at 50% 45%,#000 62%,transparent 100%);mask-image:radial-gradient(ellipse 60% 62% at 50% 45%,#000 62%,transparent 100%)}
+#port{position:absolute;right:3%;bottom:0;height:88%;width:auto;max-width:60%;object-fit:contain;object-position:bottom;opacity:0;transition:opacity .35s,transform .35s;transform:translateY(8px);
+  -webkit-mask-image:radial-gradient(ellipse 47% 50% at 50% 50%,#000 58%,transparent 100%);mask-image:radial-gradient(ellipse 47% 50% at 50% 50%,#000 58%,transparent 100%)}
 #port.on{opacity:1;transform:none}
 #port.ghost{filter:saturate(.4) brightness(1.1);animation:float 4s ease-in-out infinite;opacity:.85}
 @keyframes float{50%{transform:translateY(-10px)}}
 #hot{position:absolute;inset:0}
-#hot .spot{position:absolute;border:2px dashed rgba(216,178,90,.0);border-radius:10px;cursor:pointer;background:transparent}
-#hot .spot:hover,#hot .spot:focus{border-color:rgba(216,178,90,.9);background:rgba(216,178,90,.12)}
-#hot .spot.done{border-color:rgba(127,167,201,.6);border-style:solid}
-#hot .spot.done::after{content:"✓";position:absolute;right:4px;top:0;color:var(--blue);font-weight:700}
-#hot.show .spot{border-color:rgba(216,178,90,.55)}
+#hot .spot{position:absolute;border:0;border-radius:50%;cursor:pointer;background:transparent;padding:0}
+#hot .spot span{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);white-space:nowrap;font:600 12.5px var(--body);color:#f3e6c4;background:rgba(10,10,14,.72);border:1px solid rgba(216,178,90,.6);border-radius:999px;padding:3px 10px;opacity:0;transition:opacity .2s;pointer-events:none}
+#hot .spot:hover,#hot .spot:focus-visible{background:radial-gradient(closest-side,rgba(255,214,140,.28),rgba(255,214,140,0))}
+#hot .spot:hover span,#hot .spot:focus-visible span,#hot.show .spot span{opacity:1}
+#hot.show .spot:not(.done)::before{content:"";position:absolute;left:50%;top:50%;width:26px;height:26px;margin:-13px 0 0 -13px;border-radius:50%;border:2px solid rgba(255,214,140,.8);animation:ping 1.6s ease-out infinite}
+#hot .spot.done span{opacity:1;color:#cfe0ee;border-color:rgba(127,167,201,.6)}
+#hot .spot.done span::before{content:"✓ "}
+@keyframes ping{0%{transform:scale(.6);opacity:1}100%{transform:scale(1.8);opacity:0}}
 .hint{position:absolute;left:10px;top:10px;background:rgba(0,0,0,.65);padding:6px 10px;border-radius:6px;font-size:13px;max-width:70%}
 #fx{position:absolute;inset:0;pointer-events:none}
 #scare{position:absolute;inset:0;background:#000 center/cover no-repeat;opacity:0;pointer-events:none}
@@ -196,8 +199,31 @@ const SFX={blip:()=>tone(660,.05,"square",.03),page:()=>noise(.12,.12,2400),clue
   sting:()=>{noise(.9,.7,1500);[233,247,262,311].forEach((f,i)=>tone(f,1.2,"sawtooth",.09,i*.01));tone(55,1.4,"sine",.5,0,40)},
   candle:()=>{noise(.5,.25,600);tone(300,.4,"sine",.05,0,120)},wind:()=>noise(2.2,.18,400)};
 const sfx=k=>{try{SFX[k]&&SFX[k]()}catch(e){}};
-function setDrone(on){const a=ac();if(drone){try{drone.forEach(o=>o.stop())}catch(e){}drone=null}if(!on||!a)return;
-  const g=a.createGain();g.gain.value=.025;g.connect(a.destination);drone=[55,58.3,82.4].map(f=>{const o=a.createOscillator();o.type="sine";o.frequency.value=f;o.connect(g);o.start();return o})}
+/* ── 배경음악: 계면조 가야금 퉁김 + 낮은 바탕음. 평소(calm)와 괴담(eerie) 두 분위기 ── */
+let mood="calm",bgmT=null,bgmBus=null,pad=null;
+function bgmStart(){const a=ac();if(!a||AUTO||bgmT)return;
+  bgmBus=a.createGain();bgmBus.gain.value=.9;const dl=a.createDelay(),fb=a.createGain(),wet=a.createGain();dl.delayTime.value=.42;fb.gain.value=.32;wet.gain.value=.35;
+  bgmBus.connect(a.destination);bgmBus.connect(dl);dl.connect(fb).connect(dl);dl.connect(wet).connect(a.destination);
+  padOn();const step=()=>{if(!bgmBus)return;const w=mood==="eerie"?pluckEerie():pluckCalm();bgmT=setTimeout(step,w*1000)};bgmT=setTimeout(step,600)}
+function bgmStop(){clearTimeout(bgmT);bgmT=null;padOff();if(bgmBus){try{bgmBus.disconnect()}catch(e){}bgmBus=null}}
+function padOn(){const a=ac();if(!a||!bgmBus)return;padOff();const g=a.createGain(),t=a.currentTime;g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(mood==="eerie"?.05:.03,t+3);g.connect(bgmBus);
+  const fs=mood==="eerie"?[55,58.3,110.5]:[110,164.8];const lfo=a.createOscillator(),lg=a.createGain();lfo.frequency.value=.09;lg.gain.value=mood==="eerie"?.02:.012;lfo.connect(lg).connect(g.gain);lfo.start();
+  pad={g,os:[lfo,...fs.map(f=>{const o=a.createOscillator();o.type="triangle";o.frequency.value=f;o.connect(g);o.start();return o})]}}
+function padOff(){if(!pad)return;const a=AC,p=pad;pad=null;try{p.g.gain.cancelScheduledValues(a.currentTime);p.g.gain.setTargetAtTime(0,a.currentTime,.6);setTimeout(()=>p.os.forEach(o=>{try{o.stop()}catch(e){}}),2500)}catch(e){}}
+/* 가야금처럼: 퉁기고 나서 살짝 떠는 소리(농현) */
+function pluck(f,vol,len,when){const a=ac();if(!a||!bgmBus)return;const t=a.currentTime+(when||0);
+  [[1,"triangle",vol],[2,"sine",vol*.35],[3,"sine",vol*.12]].forEach(([m,ty,v])=>{const o=a.createOscillator(),g=a.createGain(),vb=a.createOscillator(),vg=a.createGain();o.type=ty;
+    o.frequency.setValueAtTime(f*m*1.02,t);o.frequency.exponentialRampToValueAtTime(f*m,t+.06);vb.frequency.value=5.5;vg.gain.setValueAtTime(0,t);vg.gain.linearRampToValueAtTime(f*m*.012,t+.5);vb.connect(vg).connect(o.frequency);
+    g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(v,t+.008);g.gain.exponentialRampToValueAtTime(.0001,t+len);o.connect(g).connect(bgmBus);o.start(t);vb.start(t);o.stop(t+len+.05);vb.stop(t+len+.05)})}
+const KYE=[220,261.6,293.7,329.6,392,440,523.3,587.3];let kyeI=3;
+function pluckCalm(){kyeI=Math.max(0,Math.min(KYE.length-1,kyeI+[-2,-1,-1,1,1,2,0][Math.floor(Math.random()*7)]));pluck(KYE[kyeI],.06,2.2);
+  if(Math.random()<.35)pluck(KYE[Math.max(0,kyeI-1)],.045,1.8,.32);if(Math.random()<.12)pluck(KYE[0]/2,.07,3,0);return 1.4+Math.random()*1.6}
+function pluckEerie(){const r=Math.random();if(r<.55)pluck([110,116.5,130.8,155.6][Math.floor(Math.random()*4)],.07,3.2);
+  else if(r<.8){const a=ac();if(a&&bgmBus){const t=a.currentTime,o=a.createOscillator(),g=a.createGain(),vb=a.createOscillator(),vg=a.createGain();o.type="sine";o.frequency.value=1250+Math.random()*500;vb.frequency.value=3.2;vg.gain.value=18;vb.connect(vg).connect(o.frequency);
+    g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(.012,t+1.2);g.gain.linearRampToValueAtTime(0,t+3.4);o.connect(g).connect(bgmBus);o.start(t);vb.start(t);o.stop(t+3.5);vb.stop(t+3.5)}}
+  else{pluck(69.3,.09,1.2);pluck(69.3,.06,1.2,.28)}return 2.8+Math.random()*3}
+/* 괴담 장면이면 on: 분위기만 바꾼다(음악은 계속) */
+function setDrone(on){const m=on?"eerie":"calm";if(m===mood&&(pad||!bgmBus))return;mood=m;if(bgmBus)padOn()}
 
 /* ── 장면 ── */
 let curBg=null;
@@ -282,9 +308,14 @@ function write(id,title,q,ph){return new Promise(res=>{const prev=(G.writes[id]|
   if(AUTO)v.querySelector("[data-ok]").click()})}
 
 /* ── 조사: 장면의 수상한 곳을 눌러 살핀다 ──
-   investigate({hint, spots:[{id, x,y,w,h(%), name, run:async()=>…}], need:[id…]}) */
+   investigate({hint, spots:[{id, x,y,w,h(배경 그림 기준 %), name, run:async()=>…}], need:[id…]})
+   배경은 cover 로 잘려 보이므로, 칸을 그림이 실제로 놓인 자리에 맞춰 옮기고 보이는 곳 안으로 당긴다 */
+function mapSpot(s){const st=$("#stage"),W=st.clientWidth,Hh=st.clientHeight,k=Math.max(W/1280,Hh/720),iw=1280*k,ih=720*k,ox=(W-iw)/2,oy=(Hh-ih)/2;
+  let l=ox+s.x/100*iw,t=oy+s.y/100*ih,r=l+s.w/100*iw,b=t+s.h/100*ih;l=Math.max(4,l);t=Math.max(30,t);r=Math.min(W-4,r);b=Math.min(Hh-4,b);if(b-t<36){const c=(t+b)/2;t=Math.max(30,c-18);b=t+36}
+  return `left:${l}px;top:${t}px;width:${r-l}px;height:${b-t}px`}
 function investigate(cfg){return new Promise(res=>{const H=$("#hot");const done=new Set();adv=null;
-  const paint=()=>{H.innerHTML=`<div class="hint">🔎 ${esc(cfg.hint||"수상한 곳을 눌러 살펴보자.")} (${[...done].filter(x=>cfg.need.includes(x)).length}/${cfg.need.length})</div>`+cfg.spots.map(s=>`<button class="spot${done.has(s.id)?" done":""}" data-s="${s.id}" title="${esc(s.name)}" aria-label="${esc(s.name)}" style="left:${s.x}%;top:${s.y}%;width:${s.w}%;height:${s.h}%"></button>`).join("")};
+  const paint=()=>{H.innerHTML=`<div class="hint">🔎 ${esc(cfg.hint||"수상한 곳을 눌러 살펴보자.")} (${[...done].filter(x=>cfg.need.includes(x)).length}/${cfg.need.length})</div>`+cfg.spots.map(s=>`<button class="spot${done.has(s.id)?" done":""}" data-s="${s.id}" title="${esc(s.name)}" aria-label="${esc(s.name)}" style="${mapSpot(s)}"><span>${esc(s.name)}</span></button>`).join("")};
+  const onRs=()=>{if(H.querySelector(".spot"))paint()};window.addEventListener("resize",onRs);const fin=res;res=()=>{window.removeEventListener("resize",onRs);fin()};
   D.className="think";D.innerHTML=`<div class="nm">조사</div><div class="tx">${esc(cfg.hint||"수상한 곳을 눌러 살펴보자.")}</div><div class="row"><button class="btn" data-show>살필 곳 보이기</button></div>`;
   D.querySelector("[data-show]").onclick=()=>H.classList.toggle("show");
   let busy=false;paint();
@@ -346,7 +377,7 @@ $("#bRec").onclick=()=>{const v=panel(`<span class="eb">듣기 기록지</span><
   <div class="row"><button class="btn pri" data-sub>설문지로 제출하기</button><button class="btn" data-cp>글로 복사하기</button></div>`);
   v.querySelector("[data-sub]").onclick=()=>{v.remove();submitSheet(G.ch>=5?"4차시 최종":"3차시 중간")};
   v.querySelector("[data-cp]").onclick=async()=>{const ok=await copyText(notesText());toast(ok?"복사했어요":"복사가 막혔어요",ok?"설문지 칸에 붙여 넣으세요":"")}};
-$("#bSnd").onclick=()=>{G.mute=!G.mute;if(G.mute)setDrone(false);save()};
+$("#bSnd").onclick=()=>{G.mute=!G.mute;if(G.mute)bgmStop();else bgmStart();save()};
 
 /* AI 자유 심문 · 설문지 제출 */
 
@@ -521,10 +552,10 @@ async function ch1(){bg("cover");setDrone(true);
   bg("bg_gaeksa");hide();
   await N("해가 지자 객사는 쥐 죽은 듯 고요해졌다. 바람 한 점 없는데, 문풍지가 저 혼자 파르르 떨었다.");
   await investigate({hint:"객사 방을 살펴보자. 수상한 곳 세 군데.",need:["candle","floor","book"],spots:[
-    {id:"candle",x:40,y:40,w:14,h:30,name:"촛대",run:async()=>{await ME("굵은 밀랍 초다. 새것이고… 코를 대 보니 들큼한 단내가 난다. 초에서 이런 냄새가 나던가?");addClue("c_candle")}},
-    {id:"floor",x:20,y:72,w:56,h:24,name:"마루",run:async()=>{await ME("마루에 동그란 물 얼룩이 줄지어 말라 있다. 문지방에서 서안까지… 꼭 젖은 발로 걸어온 자국 같다.")}},
-    {id:"book",x:58,y:46,w:18,h:16,name:"서안 위의 책",run:async()=>{await ME("서안 밑에 낡은 책 한 권. 앞서 쓰러진 현감의 일기다. 마지막 장의 글씨가 비뚤비뚤하다.");await ME("“방 안에 단내가 난다. 머리가 무겁다. 문밖에서 소녀가 운다…”");addClue("c_diary")}},
-    {id:"door",x:2,y:20,w:14,h:56,name:"창호지 문",run:async()=>{await ME("문풍지에 작은 구멍이 나 있다. 바람이 드는 구멍일 뿐… 이겠지.")}}]});
+    {id:"candle",x:59,y:49,w:9,h:24,name:"촛대",run:async()=>{await ME("굵은 밀랍 초다. 새것이고… 코를 대 보니 들큼한 단내가 난다. 초에서 이런 냄새가 나던가?");addClue("c_candle")}},
+    {id:"floor",x:13,y:67,w:28,h:14,name:"마루",run:async()=>{await ME("마루에 동그란 물 얼룩이 줄지어 말라 있다. 문지방에서 서안까지… 꼭 젖은 발로 걸어온 자국 같다.")}},
+    {id:"book",x:67,y:65,w:11,h:10,name:"서안 위 두루마리",run:async()=>{await ME("서안 위에 말아 둔 종이. 펼쳐 보니 앞서 쓰러진 현감의 일기다. 마지막 장의 글씨가 비뚤비뚤하다.");await ME("“방 안에 단내가 난다. 머리가 무겁다. 문밖에서 소녀가 운다…”");addClue("c_diary")}},
+    {id:"door",x:9,y:12,w:10,h:52,name:"열린 문",run:async()=>{await ME("문풍지에 작은 구멍이 나 있다. 바람이 드는 구멍일 뿐… 이겠지.")}}]});
   await talk([["tong","사또, 초에 불 붙여 드리겠습니다요."],["me","너는 늘 이 방 시중을 드느냐?"],["tong","예. 그런데 새 초를 켜 놓고 시중들면 머리가 핑 돌아서요… 그래서 소인은 늘 문밖에 있었어요."]]);
   addClue("c_tong");
   await N("통인 아이가 물러가고, 현감은 홀로 책을 펼쳤다. 촛불이 일렁일 때마다 단내가 짙어졌다.");
@@ -572,9 +603,9 @@ async function ch2(){bg("bg_gaekju");
   await ME("먼저 연이의 방부터 보자.");
   bg("bg_yeoni_room");
   await investigate({hint:"삼 년 동안 비어 있던 연이의 방. 살펴볼 곳 두 군데.",need:["chest","abacus"],spots:[
-    {id:"chest",x:8,y:42,w:34,h:40,name:"함",run:async()=>{await ME("뚜껑 열린 함. 은자 주머니가 나왔다는 바로 그 함이다. 지금은 비었다.");await talk([["oh","거기서 나왔지요. 제 손으로 꺼냈으니 틀림없어요."]]);show("oh");await ME("은자 주머니는 장물이라 관아에 맡겨 두었다 한다. 끈이 네모지게 꽁꽁 묶여 있다.");addClue("c_pouch");hide()}},
-    {id:"abacus",x:56,y:56,w:24,h:24,name:"주판",run:async()=>{await ME("손때가 까맣게 밴 주판. 그 밑에 깨알 같은 셈 연습 종이가 한 묶음 있다. 연이는 셈을 꽤 한 모양이다.");addClue("c_abacus")}},
-    {id:"mirror",x:80,y:30,w:16,h:36,name:"경대",run:async()=>{await ME("경대 서랍에 붉은 댕기가 하나 없다. 늘 매고 다녔던 걸까.")}}]});
+    {id:"chest",x:54,y:24,w:34,h:50,name:"함",run:async()=>{await ME("뚜껑 열린 함. 은자 주머니가 나왔다는 바로 그 함이다. 지금은 비었다.");await talk([["oh","거기서 나왔지요. 제 손으로 꺼냈으니 틀림없어요."]]);show("oh");await ME("은자 주머니는 장물이라 관아에 맡겨 두었다 한다. 끈이 네모지게 꽁꽁 묶여 있다.");addClue("c_pouch");hide()}},
+    {id:"abacus",x:60,y:71,w:16,h:13,name:"주판",run:async()=>{await ME("손때가 까맣게 밴 주판. 그 밑에 깨알 같은 셈 연습 종이가 한 묶음 있다. 연이는 셈을 꽤 한 모양이다.");addClue("c_abacus")}},
+    {id:"mirror",x:88,y:52,w:10,h:30,name:"경대",run:async()=>{await ME("경대 서랍에 붉은 댕기가 하나 없다. 늘 매고 다녔던 걸까.")}}]});
   bg("bg_gaekju");
   await askSlot({id:"c2",title:"제2장 · 송 객주와 오씨",q:"송 객주와 오씨에게 직접 물어보자",whos:[{who:"song",n:5},{who:"oh",n:5}]});
   await N("이제 실제 심문이다. 현감은 사람들을 한 사람씩 불러 증언을 들었다.");
@@ -686,9 +717,9 @@ async function ch4(){bg("bg_gaekju");
   bg("bg_sarang");
   await N("현감은 마 서방이 잠시 장터에 나간 틈에 사랑방을 살폈다.");
   await investigate({hint:"마 서방의 사랑방. 살펴볼 곳 두 군데.",need:["cord","clog"],spots:[
-    {id:"cord",x:6,y:30,w:30,h:40,name:"장부 묶음",run:async()=>{await ME("장부 묶음이 가지런하다. 끈은 모두… 네모진 상인 매듭이다. 장부는 마 서방만 묶는다고 했다.");addClue("c_cord")}},
-    {id:"clog",x:40,y:44,w:28,h:26,name:"서안 위 초 장부",run:async()=>{await ME("마 서방이 꼼꼼히 적는 초 장부. 객사에 바친 초, 사랑방에 쓴 초가 날마다 적혀 있다.");await ME("사랑방에는 늘 ‘짧은 초’를 썼다. 그런데 한 해에 단 하루, ‘밤새 타는 긴 초 한 자루’. 그날이… 삼월 열하루.");addClue("c_clog")}},
-    {id:"abac",x:72,y:50,w:20,h:24,name:"주판",run:async()=>{await ME("마 서방의 주판. 알이 반들반들하다. 연이의 주판처럼 손때가 배어 있다.")}}]});
+    {id:"cord",x:67,y:56,w:22,h:18,name:"장부 묶음",run:async()=>{await ME("장부 묶음이 가지런하다. 끈은 모두… 네모진 상인 매듭이다. 장부는 마 서방만 묶는다고 했다.");addClue("c_cord")}},
+    {id:"clog",x:30,y:38,w:16,h:28,name:"촛대 곁 초 장부",run:async()=>{await ME("촛대 곁에 마 서방이 꼼꼼히 적는 초 장부가 놓여 있다. 객사에 바친 초, 사랑방에 쓴 초가 날마다 적혀 있다.");await ME("사랑방에는 늘 ‘짧은 초’를 썼다. 그런데 한 해에 단 하루, ‘밤새 타는 긴 초 한 자루’. 그날이… 삼월 열하루.");addClue("c_clog")}},
+    {id:"abac",x:46,y:63,w:19,h:10,name:"주판",run:async()=>{await ME("마 서방의 주판. 알이 반들반들하다. 연이의 주판처럼 손때가 배어 있다.")}}]});
   await ME("밤새 사람이 없어도, 긴 초 하나면 창에 밤새 불빛이 비친다. 돌쇠가 본 ‘불빛’은 바로 이것이다.");
   /* 우물 */
   bg("bg_well");dark(true);setDrone(true);
@@ -801,7 +832,7 @@ async function ending(){bg("cover");hide();await sheet(`<div style="text-align:c
 
 /* ═════════ 시작 ═════════ */
 load();hud();title();
-window.addEventListener("pointerdown",()=>ac(),{once:true});
+window.addEventListener("pointerdown",()=>{ac();bgmStart()},{once:true});
 
 </script>
 </body></html>
