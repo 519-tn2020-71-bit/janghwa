@@ -29,8 +29,10 @@ button{font:inherit;color:inherit}
 #hot .spot{position:absolute;border:0;border-radius:50%;cursor:pointer;background:transparent;padding:0}
 #hot .spot span{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);white-space:nowrap;font:600 12.5px var(--body);color:#f3e6c4;background:rgba(10,10,14,.72);border:1px solid rgba(216,178,90,.6);border-radius:999px;padding:3px 10px;opacity:0;transition:opacity .2s;pointer-events:none}
 #hot .spot:hover,#hot .spot:focus-visible{background:radial-gradient(closest-side,rgba(255,214,140,.28),rgba(255,214,140,0))}
-#hot .spot:hover span,#hot .spot:focus-visible span,#hot.show .spot span{opacity:1}
-#hot.show .spot:not(.done)::before{content:"";position:absolute;left:50%;top:50%;width:26px;height:26px;margin:-13px 0 0 -13px;border-radius:50%;border:2px solid rgba(255,214,140,.8);animation:ping 1.6s ease-out infinite}
+#hot .spot:hover span,#hot .spot:focus-visible span,#hot .spot.hint span{opacity:1}
+#hot .miss{position:absolute;transform:translate(-50%,-50%);pointer-events:none;font:600 12px var(--body);color:#cbbf9f;background:rgba(10,10,14,.6);border-radius:999px;padding:2px 8px;animation:missup .9s ease-out forwards}
+@keyframes missup{to{opacity:0;transform:translate(-50%,-140%)}}
+#hot .spot.hint::before{content:"";position:absolute;left:50%;top:50%;width:26px;height:26px;margin:-13px 0 0 -13px;border-radius:50%;border:2px solid rgba(255,214,140,.8);animation:ping 1.6s ease-out infinite}
 #hot .spot.done span{opacity:1;color:#cfe0ee;border-color:rgba(127,167,201,.6)}
 #hot .spot.done span::before{content:"✓ "}
 @keyframes ping{0%{transform:scale(.6);opacity:1}100%{transform:scale(1.8);opacity:0}}
@@ -487,20 +489,22 @@ function roam(R){return new Promise(res=>{const H=$("#hot");let place=G.roamAt&&
   const goalsOk=()=>R.goals.every(g=>g.ok());
   const todo=k=>{const p=P(k);if(p.lock&&p.lock())return false;return (p.spots||[]).some(s=>s.key&&!seen(R.id,"spot:"+s.id))||ppl(k).some(w=>tops(w).some(t=>t.key&&!seen(R.id,w+":"+t.id)))};
   const goalHtml=()=>`<div class="goals">${R.goals.map(g=>`<div class="${g.ok()?"ok":""}">${g.ok()?"✓":"○"} ${esc(g.t)}</div>`).join("")}</div>`;
+  /* 힌트: 눌렀을 때만 다음 할 일 하나를 짚어 준다(hp 장소·hS 조사 칸·hW 사람·hT 이야기) */
+  let hp=null,hS=null,hW=null,hT=null;
   let busy=false;
   const go=async fn=>{if(busy)return;busy=true;H.innerHTML="";adv=null;try{await fn()}finally{busy=false}if(!fin)menu()};
   let fin=false;const done=()=>{fin=true;window.removeEventListener("resize",onRs);H.innerHTML="";H.classList.remove("show");hide();res()};
   async function enter(k){place=k;G.roamAt=G.roamAt||{};G.roamAt[R.id]=k;save();const p=P(k);bg(p.bg,{dark:!!p.dark});hide();chip(R.title+" · "+p.name);
     if(p.enter&&!seen(R.id,"enter:"+k)){mark(R.id,"enter:"+k);await wait(AUTO?0:500);await p.enter()}}
   function menu(){const p=P(place),here=ppl(place);hide();
-    H.innerHTML=`<div class="hint">📍 ${esc(p.name)}</div>`+(p.spots||[]).map(s=>`<button class="spot${seen(R.id,"spot:"+s.id)?" done":""}" data-s="${s.id}" aria-label="${esc(s.name)}" style="${mapSpot(s)}"><span>${esc(s.name)}</span></button>`).join("")+
-      `<div class="figs">${here.map(w=>`<button class="fig" data-w="${w}"><img src="${art(PORT[w])}" alt="">${tops(w).some(t=>t.key&&!seen(R.id,w+":"+t.id))?'<i class="new"></i>':""}<b>${esc(NAMES[w])}</b></button>`).join("")}</div>`;
+    H.innerHTML=`<div class="hint">📍 ${esc(p.name)}${(p.spots||[]).length?" · 그림 속을 눌러 살펴보자":""}</div>`+(p.spots||[]).map(s=>`<button class="spot${seen(R.id,"spot:"+s.id)?" done":s.id===hS?" hint":""}" data-s="${s.id}" aria-label="${esc(s.name)}" style="${mapSpot(s)}"><span>${esc(s.name)}</span></button>`).join("")+
+      `<div class="figs">${here.map(w=>`<button class="fig" data-w="${w}"><img src="${art(PORT[w])}" alt="">${w===hW&&hT&&!seen(R.id,w+":"+hT)?'<i class="new"></i>':""}<b>${esc(NAMES[w])}</b></button>`).join("")}</div>`;
     D.className="roam";D.innerHTML=`<div class="nm">자유 수사<span class="tag">${esc(p.name)}</span></div><div class="tx">${esc(p.desc||"")}</div>
-      <div class="cmd">${here.map(w=>`<button class="btn" data-w="${w}">💬 ${esc(NAMES[w])}</button>`).join("")}${(p.spots||[]).length?'<button class="btn" data-look>🔎 둘러보기</button>':""}<button class="btn" data-map>🗺 다른 곳으로</button><button class="btn" data-goal>📜 수사 목표 ${R.goals.filter(g=>g.ok()).length}/${R.goals.length}</button>${goalsOk()?`<button class="btn pri" data-fin>${esc(R.finish||"수사를 마치고 다음으로")} ▶</button>`:""}</div>`;
+      <div class="cmd">${here.map(w=>`<button class="btn" data-w="${w}">💬 ${esc(NAMES[w])}</button>`).join("")}${goalsOk()?"":'<button class="btn" data-hint>💡 힌트</button>'}<button class="btn" data-map>🗺 다른 곳으로</button><button class="btn" data-goal>📜 수사 목표 ${R.goals.filter(g=>g.ok()).length}/${R.goals.length}</button>${goalsOk()?`<button class="btn pri" data-fin>${esc(R.finish||"수사를 마치고 다음으로")} ▶</button>`:""}</div>`;
     adv=null}
   async function talkTo(w){const Pp=R.people[w]||{};
     for(;;){show(w);const ts=tops(w);
-      const c=await new Promise(r=>{D.className="";D.innerHTML=`<div class="nm">${esc(NAMES[w])}<span class="tag">말 걸기</span></div><div class="tx">무엇을 할까?</div><div class="opts">${ts.map(t=>`<button data-t="${t.id}">${seen(R.id,w+":"+t.id)?"":"● "}${esc(t.label)}</button>`).join("")}<button data-t="@pres">🗂 증거 내밀기</button><button data-t="@mood">👁 분위기 살피기${seen(R.id,w+":@mood")?"":" ●"}</button><button data-t="@back">물러나기</button></div>`;
+      const c=await new Promise(r=>{D.className="";D.innerHTML=`<div class="nm">${esc(NAMES[w])}<span class="tag">말 걸기</span></div><div class="tx">무엇을 할까?</div><div class="opts">${ts.map(t=>`<button data-t="${t.id}">${w===hW&&t.id===hT&&!seen(R.id,w+":"+t.id)?"● ":""}${esc(t.label)}</button>`).join("")}<button data-t="@pres">🗂 증거 내밀기</button><button data-t="@mood">👁 분위기 살피기${w===hW&&hT==="@mood"&&!seen(R.id,w+":@mood")?" ●":""}</button><button data-t="@back">물러나기</button></div>`;
         adv=null;D.querySelectorAll("[data-t]").forEach(b=>b.onclick=()=>{sfx("blip");r(b.dataset.t)})});
       if(c==="@back")return;
       if(c==="@mood"){mark(R.id,w+":@mood");sfx("page");G.log=G.log||[];G.log.push(["제"+G.ch+"장 · 분위기 · "+NAMES[w],Pp.mood||""]);await ME("[분위기 살피기] "+(Pp.mood||"별다른 기색은 없다."));if(Pp.moodRun)await Pp.moodRun();continue}
@@ -508,13 +512,25 @@ function roam(R){return new Promise(res=>{const H=$("#hot");let place=G.roamAt&&
         if(typeof r==="function")await r();else await talk(r||Pp.presentDefault||[[w,"…그것이 소인과 무슨 상관이옵니까?"]]);continue}
       const t=ts.find(x=>x.id===c);mark(R.id,w+":"+t.id);if(await t.run()===false){delete G.seen[R.id+":"+w+":"+t.id];save()}}}
   H.onclick=e=>{const s=e.target.closest("[data-s]");if(s){const sp=P(place).spots.find(x=>x.id===s.dataset.s);go(async()=>{await focusIn(sp);const r=await sp.run();await focusOut();if(r!==false)mark(R.id,"spot:"+sp.id)});return}
-    const f=e.target.closest("[data-w]");if(f)go(()=>talkTo(f.dataset.w))};
+    const f=e.target.closest("[data-w]");if(f){go(()=>talkTo(f.dataset.w));return}
+    if(e.target===H&&!busy){const r=H.getBoundingClientRect(),m=document.createElement("span");m.className="miss";m.textContent="별것 없다";m.style.left=(e.clientX-r.left)+"px";m.style.top=(e.clientY-r.top)+"px";H.appendChild(m);setTimeout(()=>m.remove(),900)}};
   D.addEventListener("click",function onD(e){if(fin){D.removeEventListener("click",onD);return}if(busy)return;
     const w=e.target.closest(".cmd [data-w]");if(w){go(()=>talkTo(w.dataset.w));return}
-    if(e.target.closest("[data-look]")){H.classList.toggle("show");return}
-    if(e.target.closest("[data-goal]")){panel(`<span class="eb">수사 목표</span><h2>${esc(R.title)}</h2>${goalHtml()}<p class="note">● 표시가 있는 곳·사람에게 아직 알아낼 것이 있어요. 인물의 ‘분위기 살피기’도 잊지 마세요.</p>`);return}
+    if(e.target.closest("[data-hint]")){hint();return}
+    if(e.target.closest("[data-goal]")){panel(`<span class="eb">수사 목표</span><h2>${esc(R.title)}</h2>${goalHtml()}<p class="note">어디서부터 해야 할지 모르겠으면 💡 힌트를 눌러 보세요. 인물의 ‘분위기 살피기’와 ‘증거 내밀기’도 잊지 마세요.</p>`);return}
     if(e.target.closest("[data-fin]")){done();return}
-    if(e.target.closest("[data-map]")){go(async()=>{const k=await worldMap(R,place,todo,ppl);if(k&&k!==place)await enter(k)});return}});
+    if(e.target.closest("[data-map]")){go(async()=>{const k=await worldMap(R,place,x=>x===hp&&todo(x),ppl);if(k&&k!==place)await enter(k)});return}});
+  function hint(){G.hints=(G.hints||0)+1;save();sfx("page");hp=hS=hW=hT=null;const p=P(place);let msg;
+    const s=(p.spots||[]).find(s=>s.key&&!seen(R.id,"spot:"+s.id));
+    const pw=ppl(place).map(w=>[w,tops(w).find(t=>t.key&&!seen(R.id,w+":"+t.id))]).find(x=>x[1]);
+    const other=Object.keys(R.places).find(k=>k!==place&&todo(k));
+    const md=ppl(place).find(w=>R.people[w]&&R.people[w].moodRun&&!seen(R.id,w+":@mood"));
+    if(s){hS=s.id;msg="이곳에 아직 살펴볼 것이 있다. 그림 속에서 빛나는 곳을 눌러 보자."}
+    else if(pw){hW=pw[0];hT=pw[1].id;msg=NAMES[hW]+"에게 말을 걸어 보자. 물어볼 이야기에 ● 표시를 해 두었다."}
+    else if(other){hp=other;msg="여기서는 더 알아낼 것이 없다. 🗺 다른 곳으로를 눌러 ● 표시가 있는 ‘"+P(other).name+"’에 가 보자."}
+    else if(md){hW=md;hT="@mood";msg=NAMES[md]+"의 분위기를 살펴보자(말 걸기 → 👁 분위기 살피기)."}
+    else{const g=R.goals.find(g=>!g.ok());msg="수사 목표를 다시 읽어 보자: ‘"+(g?g.t:"")+"’. 모은 단서를 사람들에게 🗂 증거로 내밀어 보자."}
+    panel(`<span class="eb">💡 힌트</span><h2>무엇을 해 볼까</h2><p>${esc(msg)}</p><p class="note">힌트를 쓴 횟수는 수사 기록에 남아요(지금까지 ${G.hints}번).</p>`);menu()}
   const onRs=()=>{if(!fin&&!busy)menu()};window.addEventListener("resize",onRs);const fin0=done;
   if(AUTO){(async()=>{await enter(place);for(let pass=0;pass<6&&!goalsOk();pass++)for(const k of Object.keys(R.places)){const p=P(k);if(p.lock&&p.lock())continue;await enter(k);
       for(const s of p.spots||[])if(s.key&&!seen(R.id,"spot:"+s.id)){if(await s.run()!==false)mark(R.id,"spot:"+s.id)}
@@ -593,7 +609,7 @@ function submitData(session){const sid=G.sid||{};
   const fixes=G.notes.filter(n=>n.fix||n.intent0!==n.intent).map(n=>`· 제${n.ch}장 ${n.who}: “${n.line}”\n  처음 판정: ${n.fix?n.fix.from:n.intent0} → 고친 판정: ${n.fix?n.fix.to:n.intent}${n.fix&&n.fix.why?`\n  까닭: ${n.fix.why}`:""}`).join("\n");
   const writes=Object.values(G.writes).map(w=>`· [제${w.ch}장] ${w.t}\n${w.a}`).join("\n\n");
   const cnt=r=>G.notes.filter(n=>n.res===r).length;
-  const progress=`마친 장: ${G.done||0} / 5 · 모은 단서 ${G.clues.length}개\n듣기 판정 ${G.notes.length}개 · 처음에 맞힘 ${cnt("맞음")} · 고침 ${cnt("고침")} · 보류 뒤 확인 ${cnt("확인")} · 아직 보류 ${cnt("보류")}\n되짚은 횟수 ${G.wrong||0}`;
+  const progress=`마친 장: ${G.done||0} / 5 · 모은 단서 ${G.clues.length}개\n듣기 판정 ${G.notes.length}개 · 처음에 맞힘 ${cnt("맞음")} · 고침 ${cnt("고침")} · 보류 뒤 확인 ${cnt("확인")} · 아직 보류 ${cnt("보류")}\n되짚은 횟수 ${G.wrong||0} · 힌트 ${G.hints||0}번`;
   return {cls:sid.cls||"",num:sid.num||"",name:G.sname||"",session,notes:notesText(),fixes:fixes||"(없음)",writes:writes||"(없음)",progress,report:G.report||"",memo:G.memo||""}}
 function submitText(d){return [`반 ${d.cls} · 번호 ${d.num} · 이름 ${d.name} · ${d.session}`,"",d.notes,"","[고친 판정]",d.fixes,"","[쓴 글]",d.writes,"","[진행 기록]",d.progress,d.report?"\n[수사 보고서]\n"+d.report:"",d.memo?"\n[선생님께 한마디]\n"+d.memo:""].join("\n")}
 async function copyText(t){try{await navigator.clipboard.writeText(t);return true}catch(e){const ta=document.createElement("textarea");ta.value=t;document.body.appendChild(ta);ta.select();let ok=false;try{ok=document.execCommand("copy")}catch(x){}ta.remove();return ok}}
