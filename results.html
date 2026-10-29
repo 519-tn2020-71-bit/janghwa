@@ -37,6 +37,7 @@ table{border-collapse:collapse;width:100%;font-size:13px}td,th{border-bottom:1px
 <div class="card"><h2>추리 로직 — 많이 헛짚은 물음</h2><p class="note">물음마다 학생 한 명이 평균 몇 번 틀렸는지</p><div id="logic"></div></div>
 <div class="card"><h2>말의 출처 지도 — 헷갈린 화살표</h2><p class="note">처음 확인할 때 틀린 학생 비율</p><div id="src"></div></div>
 <div class="card"><h2>범인 지목 — 처음 고른 사람</h2><p class="note">오판 엔딩을 본 학생 수도 함께 봐요.</p><div id="acc"></div></div>
+<div class="card"><h2>기로 — 실패 엔딩을 본 학생</h2><p class="note">각 기로에서 처음에 그릇된 길을 골라 실패 엔딩을 본 학생 수예요. 많이 본 기로를 토의 거리로 써 보세요.</p><div id="bad"></div></div>
 <div class="card"><h2>밤의 객사 — 고른 행동</h2><p class="note">‘말을 걸었다’를 고른 학생만 원혼에게서 그림자 없는 불빛 이야기를 들었어요.</p><div id="night"></div></div>
 </div>
 <div class="card"><h2>학생별</h2><div style="overflow-x:auto"><table id="tbl"></table></div></div>
@@ -49,12 +50,13 @@ const $=s=>document.querySelector(s),esc=t=>String(t).replace(/[&<>"]/g,c=>({"&"
 function csv(t){const R=[];let row=[],f="",q=false;for(let i=0;i<t.length;i++){const c=t[i];if(q){if(c==='"'){if(t[i+1]==='"'){f+='"';i++}else q=false}else f+=c}
   else if(c==='"')q=true;else if(c===","){row.push(f);f=""}else if(c==="\n"||c==="\r"){if(c==="\r"&&t[i+1]==="\n")i++;row.push(f);R.push(row);row=[];f=""}else f+=c}
   if(f||row.length){row.push(f);R.push(row)}return R}
-function parse(notes){const s={logic:{},src:null,night:"",combo:null,acc:[],mis:0};
+function parse(notes){const s={logic:{},src:null,night:"",combo:null,acc:[],mis:0,bads:[]};
   for(const ln of notes.split(/\r?\n/)){let m;
     if(m=ln.match(/· 추리 로직 「(.+?)」 → .*?\(헛짚은 횟수 (\d+)(?:; 물음별 ([\d/]+))?\)(?: \/ 판단의 저울: (?:(확정|의심|보류) → )?(확정|의심|보류))?/))s.logic[m[1]]={w:+m[2],sw:m[3]?m[3].split("/").map(Number):null,first:m[4]||m[5]||"",fin:m[5]||""};
     else if(m=ln.match(/· 말의 출처 지도: 처음에 맞힌 화살표 (\d+)\/(\d+) \(화살표별 헛짚음 ([\d/]+)\)/))s.src={ok:+m[1],n:+m[2],miss:m[3].split("/").map(Number)};
     else if(m=ln.match(/· 밤의 객사: (.+)/))s.night=m[1].trim();
     else if(m=ln.match(/· 단서 맞붙이기: 얻은 추론 (\d+)개.*헛맞붙임 (\d+)번/))s.combo={got:+m[1],miss:+m[2]};
+    else if(m=ln.match(/· 실패 엔딩: (.+) \(\d+\/\d+\)/))s.bads=m[1].split(", ");
     else if(m=ln.match(/· 범인 지목: (.+?)(?: \(오판 (\d+)번\))?\s*$/)){s.acc=m[1].split(" → ");s.mis=+(m[2]||0)}}
   return s}
 function load(rows){/* rows: [{key, label, notes, session}] — 같은 학생은 나중 것(최종 우선)만 */
@@ -83,11 +85,13 @@ function render(S){$("#out").classList.remove("hidden");const n=S.length;
   const SS=S.filter(s=>s.src);bars($("#src"),SRC.map((l,i)=>{const c=SS.filter(s=>s.src.miss[i]>0).length;return [l,c,SS.length,pct(c,SS.length)+"%"]}),"var(--c2)");
   /* 범인 지목 */
   const A=S.filter(s=>s.acc.length);bars($("#acc"),["마 서방","오씨","돌쇠","송 객주"].map(w=>{const c=A.filter(s=>s.acc[0]===w).length;return [w,c,A.length,c+"명"]}),"var(--c3)");
+  /* 실패 엔딩 */
+  bars($("#bad"),["닫힌 객사","네 번째로 쓰러진 현감","닫힌 장부","단내 나는 밤","빈 우물","그릇된 판결"].map(w=>{const c=S.filter(s=>s.bads.includes(w)).length;return [w,c,S.length,c+"명"]}),"var(--c2)");
   /* 밤 */
   const NS=S.filter(s=>s.night);bars($("#night"),["말을 걸었다","촛불을 끄고 숨었다","문을 잠갔다","얼어붙었다"].map(w=>{const c=NS.filter(s=>s.night===w).length;return [w,c,NS.length,c+"명"]}),"var(--c1)");
   /* 표 */
-  $("#tbl").innerHTML=`<tr><th>학생</th><th>저울(1장)</th><th>저울(3장)</th><th>로직 헛짚음</th><th>출처 지도</th><th>맞붙이기</th><th>지목</th><th>밤</th></tr>`+S.map(s=>{const l1=s.logic["현감들은 왜 쓰러졌나"],l3=s.logic["편지와 주머니는 누가 꾸몄나"],sw=Object.values(s.logic).reduce((a,x)=>a+x.w,0);
-    const fm=x=>x&&x.fin?(x.first!==x.fin?`${x.first}→${x.fin}`:x.fin):"";return `<tr><td>${esc(s.label)}</td><td>${esc(fm(l1))}</td><td>${esc(fm(l3))}</td><td>${sw}</td><td>${s.src?s.src.ok+"/"+s.src.n:""}</td><td>${s.combo?s.combo.got+"개 (헛 "+s.combo.miss+")":""}</td><td>${esc(s.acc.join("→"))}</td><td>${esc(s.night)}</td></tr>`}).join("")}
+  $("#tbl").innerHTML=`<tr><th>학생</th><th>저울(1장)</th><th>저울(3장)</th><th>로직 헛짚음</th><th>출처 지도</th><th>맞붙이기</th><th>지목</th><th>실패 엔딩</th><th>밤</th></tr>`+S.map(s=>{const l1=s.logic["현감들은 왜 쓰러졌나"],l3=s.logic["편지와 주머니는 누가 꾸몄나"],sw=Object.values(s.logic).reduce((a,x)=>a+x.w,0);
+    const fm=x=>x&&x.fin?(x.first!==x.fin?`${x.first}→${x.fin}`:x.fin):"";return `<tr><td>${esc(s.label)}</td><td>${esc(fm(l1))}</td><td>${esc(fm(l3))}</td><td>${sw}</td><td>${s.src?s.src.ok+"/"+s.src.n:""}</td><td>${s.combo?s.combo.got+"개 (헛 "+s.combo.miss+")":""}</td><td>${esc(s.acc.join("→"))}</td><td>${esc(s.bads.join(", "))}</td><td>${esc(s.night)}</td></tr>`}).join("")}
 function run(text,isCSV){const rows=isCSV?fromCSV(text):fromText(text);if(!rows.length){$("#msg").textContent="기록을 찾지 못했어요. ‘[듣기 기록지]’로 시작하는 칸이 있는 CSV인지 확인해 주세요.";return}
   const S=load(rows);$("#msg").textContent=`${S.length}명의 기록을 읽었어요.`;render(S)}
 $("#file").onchange=e=>{const f=e.target.files[0];if(f)f.text().then(t=>run(t,true))};
