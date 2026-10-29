@@ -126,6 +126,7 @@ button{font:inherit;color:inherit}
 .places button.here{border-color:var(--seal);border-width:2px}.places button:disabled{opacity:.45;cursor:not-allowed}
 .places small{color:#6d6250;font-size:12.5px}
 .sheet.badend{background:linear-gradient(#1a0b0e,#0d0608);border-color:#7a2630;color:#ead8cf}.sheet.badend h2{color:#e46a6a;letter-spacing:.08em}.sheet.badend .eb{color:#c9545c}.sheet.badend .note{color:#d9c3b8}
+.vbtn{margin-left:8px;font:600 12px var(--body);color:#f3e6c4;background:rgba(216,178,90,.18);border:1px solid rgba(216,178,90,.55);border-radius:999px;padding:2px 10px;cursor:pointer;vertical-align:middle}.vbtn:hover{background:rgba(216,178,90,.32)}
 .goals div{padding:6px 0;border-bottom:1px dashed #d5c9a8;font-size:15px}.goals .ok{color:#3c6b3a}
 @media (max-width:640px){#hot .fig img{width:56px;height:56px}}
 .opts button,.btn{background:#1f222b;border:1px solid #474a55;border-radius:8px;padding:9px 12px;text-align:left;cursor:pointer;font-size:15px;line-height:1.5}
@@ -242,6 +243,7 @@ button.card{cursor:pointer}button.card:hover{border-color:var(--seal);box-shadow
 </div>
 
 <script>
+const VOICES=new Set(["1jaahjd","ynwrm8","z78303","vxcrw5","h2ox1r"]);
 /* 젖은 발자국 — 추리게임 엔진
    장면(bg) · 대사(say) · 고르기(choose) · 듣기 판정(judge) · 조사(investigate) · 증언 판(testimony) · 감정(lab) · 추리 쇼(deduce)
    · 수첩/보드/기록지 · 괴담 연출(scare) · 저장. 대본은 story.js, 제출은 submit.js.
@@ -321,16 +323,27 @@ const D=$("#dlg");let adv=null;
 D.addEventListener("click",e=>{if(e.target.closest("button"))return;adv&&adv()});
 document.addEventListener("keydown",e=>{if($(".veil"))return;if(["Space","Enter","KeyZ"].includes(e.code)&&adv){e.preventDefault();adv()}});
 /* say(누구, 글, 표정) — 누구: "n" 해설(옛이야기 말투), "me" 현감의 속생각, 그 밖에는 인물 */
+/* ── 목소리: ../voice/gen.mjs 로 만든 voice/v_<해시>.mp3. 있는 해시 목록 VOICES 는 build.js 가 넣는다 ── */
+const vkey=(who,t)=>{let h=0x811c9dc5;const s=who+"|"+t.trim();for(let i=0;i<s.length;i++){h^=s.charCodeAt(i);h=Math.imul(h,0x01000193)>>>0}return h.toString(36)};
+const hasVoice=(who,t)=>typeof VOICES!=="undefined"&&VOICES.has(vkey(who,t));
+let vAud=null,VREP=null;
+function vStop(){if(vAud){try{vAud.pause()}catch(e){}vAud=null}}
+function voice(who,t){vStop();if(G.mute||AUTO||!hasVoice(who,t))return;vAud=new Audio("voice/v_"+vkey(who,t)+".mp3");vAud.play().catch(()=>{})}
+/* 듣기 판정 중에는 그 말을 다시 들을 수 있다 */
+const vrepBtn=()=>VREP&&hasVoice(VREP[0],VREP[1])?'<button class="vbtn" data-vrep>🔊 다시 듣기</button>':"";
+document.addEventListener("click",e=>{const b=e.target.closest("[data-vrep],[data-vline]");if(!b)return;e.stopPropagation();ac();
+  if(b.dataset.vline){const [w,...t]=b.dataset.vline.split("|");voice(w,t.join("|"))}else if(VREP)voice(VREP[0],VREP[1])},true);
 function say(who,text,face){return new Promise(res=>{
   if(who!=="n"&&who!=="me"&&PORT[who])show(who,face);else if(who==="n")hide();
   D.className=who==="n"?"narr":who==="me"?"think":"";
   const nm=who==="n"?"이야기꾼":NAMES[who]||who;
-  D.innerHTML=`<div class="nm">${esc(nm)}${who==="me"?'<span class="tag">속생각</span>':""}</div><div class="tx"></div>`;
+  D.innerHTML=`<div class="nm">${esc(nm)}${who==="me"?'<span class="tag">속생각</span>':""}${who==="me"?vrepBtn():""}</div><div class="tx"></div>`;
+  if(who!=="me"&&who!=="n")voice(who,text);
   if(who!=="me"&&who!=="n"){G.log=G.log||[];G.log.push(["제"+G.ch+"장 · "+nm,text]);if(G.log.length>300)G.log.shift()}
   const tx=D.querySelector(".tx");const full=who==="n"||who==="me"?text:"“"+text+"”";const ch=[...full];let i=0,done=false;
   const fin=()=>{done=true;tx.textContent=full;D.insertAdjacentHTML("beforeend",'<span class="more">▼</span>')};
   const tick=()=>{if(done)return;i+=2;tx.textContent=ch.slice(0,i).join("");if(i>=ch.length)fin();else setTimeout(tick,16)};
-  adv=()=>{if(!done){fin();return}adv=null;sfx("blip");res()};
+  adv=()=>{if(!done){fin();return}adv=null;if(who!=="me"&&who!=="n")vStop();sfx("blip");res()};
   if(AUTO){fin();setTimeout(()=>adv&&adv(),0)}else tick()})}
 const N=t=>say("n",t),ME=t=>say("me",t);
 async function talk(list){for(const it of list){if(typeof it==="function"){await it();continue}await say(it[0],it[1],it[2])}}
@@ -338,7 +351,7 @@ async function talk(list){for(const it of list){if(typeof it==="function"){await
 /* choose(물음, 보기, {who, ans}) → 고른 번호. ans 는 자동 진행 때 고를 답 */
 function choose(q,opts,o){o=o||{};return new Promise(res=>{const who=o.who||"me";
   D.className=who==="me"?"think":"";
-  D.innerHTML=`<div class="nm">${esc(who==="me"?"나 · 새 현감":NAMES[who]||"")}${o.tag?`<span class="tag">${esc(o.tag)}</span>`:""}</div><div class="tx">${esc(q)}</div><div class="opts">${opts.map((t,k)=>`<button data-k="${k}">${esc(t)}</button>`).join("")}</div>`;
+  D.innerHTML=`<div class="nm">${esc(who==="me"?"나 · 새 현감":NAMES[who]||"")}${o.tag?`<span class="tag">${esc(o.tag)}</span>`:""}${vrepBtn()}</div><div class="tx">${esc(q)}</div><div class="opts">${opts.map((t,k)=>`<button data-k="${k}">${esc(t)}</button>`).join("")}</div>`;
   adv=null;D.querySelectorAll("[data-k]").forEach(b=>b.onclick=()=>{sfx("blip");res(+b.dataset.k)});
   if(AUTO)setTimeout(()=>res(o.ans!=null?o.ans:0),0)})}
 /* 시간 안에 고른다. 시간이 다 가면 -1. 깜짝 효과를 약하게 하면 시간 제한이 없다 */
@@ -374,6 +387,8 @@ function pickClue(title,q,ans,o){o=o||{};return new Promise(res=>{const ids=G.cl
    ① 겉말 ② 속뜻 ③ 근거 단서. hold 가 있으면 "지금 믿을 만한가"를 고르고, 판단 보류로 둔다(나중에 settle) */
 const CUES=["말의 내용","말한 상황과 처지","표정·어조","다른 말과의 관계"];
 async function judge(j){if(G.notes.some(n=>n.id===j.id&&n.res!=="보류"))return;
+  VREP=[j.who,j.line];voice(j.who,j.line);try{await judge0(j)}finally{VREP=null;vStop()}}
+async function judge0(j){
   await ME(`[듣기 판정] ${NAMES[j.who]}의 말: “${j.line}”`);
   let s0=j.sum?await quiz("① 겉으로 한 말은 무엇인가?",j.sum[0],j.sum[1],"말 그대로 무엇이라고 했는지부터 다시 보자.",{tag:"듣기 판정"}):null;
   const i0=await quiz("② 이 말로 무엇을 하려는 걸까?",j.intent[0],j.intent[1],j.hint||"말한 사람의 처지와 그 앞뒤를 떠올려 보자.",{tag:"듣기 판정"});
@@ -447,15 +462,16 @@ function investigate(cfg){return new Promise(res=>{const H=$("#hot");const done=
 /* ── 증언 판 ──
    testimony({id, who, title, goal, lines:[{t, press:[[누구,글],…], hit:{clue, say:[[…]]}, judge:{…}}], need:"hit"|"all-press"})
    ◀ ▶ 로 오가며 [캐묻기] [증거 내밀기] [속뜻 짚기]. need 가 "hit" 이면 모순(hit)을 모두 찔러야 끝난다 */
-function testimony(T){return new Promise(res=>{let k=0;const st=T.lines.map(()=>({p:0,h:0,j:0}));let v=null;adv=null;
+function testimony(T){return new Promise(res=>{let k=0,heard=-1;const st=T.lines.map(()=>({p:0,h:0,j:0}));let v=null;adv=null;
   const left=()=>T.lines.map((l,i)=>l.hit&&!st[i].h?i:-1).filter(i=>i>=0);
   const paint=msg=>{const l=T.lines[k],s=st[k];if(v)v.remove();
     v=veil(`<span class="eb">증언 · ${esc(NAMES[T.who])}</span><h2>${esc(T.title)}</h2>${T.goal?`<div class="goal">🎯 ${esc(T.goal)}</div>`:""}
-    <div class="tline${s.h?" hit":""}"><span class="who">${k+1} / ${T.lines.length}</span>“${esc(l.t)}”${s.h?'<span class="mark">모순을 짚었다</span>':s.j?'<span class="mark">속뜻을 짚었다</span>':""}</div>
+    <div class="tline${s.h?" hit":""}"><span class="who">${k+1} / ${T.lines.length}${hasVoice(T.who,l.t)?` <button class="vbtn" data-vline="${esc(T.who+"|"+l.t)}">🔊 듣기</button>`:""}</span>“${esc(l.t)}”${s.h?'<span class="mark">모순을 짚었다</span>':s.j?'<span class="mark">속뜻을 짚었다</span>':""}</div>
     ${msg?`<p class="note">${esc(msg)}</p>`:""}
     <div class="tnav"><button class="btn" data-prev ${k===0?"disabled":""}>◀ 앞 말</button><div class="tdots">${T.lines.map((x,i)=>`<i class="${i===k?"on":st[i].h?"ok":""}"></i>`).join("")}</div><button class="btn" data-nx>${k===T.lines.length-1?"처음부터 ▶":"다음 말 ▶"}</button></div>
     <div class="row"><button class="btn" data-press>캐묻기</button><button class="btn red" data-pres>증거 내밀기</button>${l.judge&&!s.j?'<button class="btn pri" data-jud>속뜻 짚기</button>':""}${!left().length&&T.need==="hit"?'<button class="btn pri" data-end>증언 마치기 ▶</button>':""}${T.need!=="hit"&&T.lines.every((x,i)=>!x.judge||st[i].j)?'<button class="btn pri" data-end>증언 마치기 ▶</button>':""}</div>
     <div class="row"><button class="btn" data-quit>물러났다가 나중에 다시 듣기</button></div><p class="note" style="margin-top:10px">캐묻기: 이 말을 더 따져 묻는다. 증거 내밀기: 이 말과 어긋나는 단서를 들이민다. 속뜻 짚기: 이 말로 무엇을 하려는지 판정한다.</p>`,"testi");
+    if(heard!==k){heard=k;voice(T.who,l.t)}
     v.onclick=async e=>{const t=e.target;
       if(t.closest("[data-prev]")){k=Math.max(0,k-1);sfx("blip");paint();return}
       if(t.closest("[data-nx]")){k=(k+1)%T.lines.length;sfx("blip");paint();return}
@@ -1266,7 +1282,7 @@ async function ending(){bg("cover");hide();await sheet(`<div style="text-align:c
 load();hud();title();
 window.addEventListener("pointerdown",()=>{ac();bgmStart()},{once:true});
 /* 다른 탭·창으로 가거나 창을 가리면 소리를 멈추고, 돌아오면 다시 켠다 */
-const quiet=()=>{bgmStop();try{AC&&AC.suspend()}catch(e){}};
+const quiet=()=>{bgmStop();vStop();try{AC&&AC.suspend()}catch(e){}};
 const wake=()=>{if(document.hidden||G.mute||!AC)return;try{AC.resume()}catch(e){}bgmStart()};
 document.addEventListener("visibilitychange",()=>document.hidden?quiet():wake());
 window.addEventListener("blur",quiet);window.addEventListener("focus",wake);window.addEventListener("pagehide",quiet);
